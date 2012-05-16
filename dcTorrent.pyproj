@@ -1,0 +1,112 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{7c473c76-ca9e-4aa4-81fc-99e032b3a675}</ProjectGuid>
+    <ProjectHome>.</ProjectHome>
+    <StartupFile>
+    </StartupFile>
+    <SearchPath>
+    </SearchPath>
+    <WorkingDirectory>.</WorkingDirectory>
+    <AssemblyName>dcTorrent</AssemblyName>
+    <Name>dcTorrent</Name>
+    <RootNamespace>dcTorrent</RootNamespace>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <DebugSymbols>true</DebugSymbols>
+    <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <DebugSymbols>true</DebugSymbols>
+    <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
+  </PropertyGroup>
+  <ItemGroup>
+    <Content Include="bittorrent.nsi" />
+    <Content Include="completedir.nsi" />
+    <Content Include="ipranges.portugal.txt" />
+    <Content Include="LICENSE.txt" />
+    <Content Include="README" />
+    <Content Include="README.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="BitTornado\bencode.py" />
+    <Compile Include="BitTornado\bitfield.py" />
+    <Compile Include="BitTornado\BT1\btformats.py" />
+    <Compile Include="BitTornado\BT1\Choker.py" />
+    <Compile Include="BitTornado\BT1\Connecter.py" />
+    <Compile Include="BitTornado\BT1\Downloader.py" />
+    <Compile Include="BitTornado\BT1\DownloaderFeedback.py" />
+    <Compile Include="BitTornado\BT1\Encrypter.py" />
+    <Compile Include="BitTornado\BT1\fakeopen.py" />
+    <Compile Include="BitTornado\BT1\FileSelector.py" />
+    <Compile Include="BitTornado\BT1\Filter.py" />
+    <Compile Include="BitTornado\BT1\HTTPDownloader.py" />
+    <Compile Include="BitTornado\BT1\makemetafile.py" />
+    <Compile Include="BitTornado\BT1\NatCheck.py" />
+    <Compile Include="BitTornado\BT1\PiecePicker.py" />
+    <Compile Include="BitTornado\BT1\Rerequester.py" />
+    <Compile Include="BitTornado\BT1\Statistics.py" />
+    <Compile Include="BitTornado\BT1\Storage.py" />
+    <Compile Include="BitTornado\BT1\StorageWrapper.py" />
+    <Compile Include="BitTornado\BT1\StreamCheck.py" />
+    <Compile Include="BitTornado\BT1\T2T.py" />
+    <Compile Include="BitTornado\BT1\track.py" />
+    <Compile Include="BitTornado\BT1\Uploader.py" />
+    <Compile Include="BitTornado\BT1\__init__.py" />
+    <Compile Include="BitTornado\clock.py" />
+    <Compile Include="BitTornado\ConfigDir.py" />
+    <Compile Include="BitTornado\ConfigReader.py" />
+    <Compile Include="BitTornado\ConnChoice.py" />
+    <Compile Include="BitTornado\CreateIcons.py" />
+    <Compile Include="BitTornado\CurrentRateMeasure.py" />
+    <Compile Include="BitTornado\download_bt1.py" />
+    <Compile Include="BitTornado\HTTPHandler.py" />
+    <Compile Include="BitTornado\inifile.py" />
+    <Compile Include="BitTornado\iprangeparse.py" />
+    <Compile Include="BitTornado\launchmanycore.py" />
+    <Compile Include="BitTornado\natpunch.py" />
+    <Compile Include="BitTornado\parseargs.py" />
+    <Compile Include="BitTornado\parsedir.py" />
+    <Compile Include="BitTornado\piecebuffer.py" />
+    <Compile Include="BitTornado\PSYCO.py" />
+    <Compile Include="BitTornado\RateLimiter.py" />
+    <Compile Include="BitTornado\RateMeasure.py" />
+    <Compile Include="BitTornado\RawServer.py" />
+    <Compile Include="BitTornado\selectpoll.py" />
+    <Compile Include="BitTornado\ServerPortHandler.py" />
+    <Compile Include="BitTornado\SocketHandler.py" />
+    <Compile Include="BitTornado\subnetparse.py" />
+    <Compile Include="BitTornado\torrentlistparse.py" />
+    <Compile Include="BitTornado\zurllib.py" />
+    <Compile Include="BitTornado\__init__.py" />
+    <Compile Include="bt-t-make.py" />
+    <Compile Include="btcompletedir.py" />
+    <Compile Include="btcompletedirgui.py" />
+    <Compile Include="btcopyannounce.py" />
+    <Compile Include="btdownloadcurses.py" />
+    <Compile Include="btdownloadgui.py" />
+    <Compile Include="btdownloadheadless.py" />
+    <Compile Include="btlaunchmany.py" />
+    <Compile Include="btlaunchmanycurses.py" />
+    <Compile Include="btmakemetafile.py" />
+    <Compile Include="btmaketorrentgui.py" />
+    <Compile Include="btreannounce.py" />
+    <Compile Include="btrename.py" />
+    <Compile Include="btsethttpseeds.py" />
+    <Compile Include="btshowmetainfo.py" />
+    <Compile Include="bttrack.py" />
+    <Compile Include="bt_MakeCreateIcons.py" />
+    <Compile Include="dcTorrentClient.py" />
+    <Compile Include="setup.py" />
+    <Compile Include="wincompletedirsetup.py" />
+    <Compile Include="winsetup.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include=".git\" />
+    <Folder Include="BitTornado\" />
+    <Folder Include="BitTornado\BT1\" />
+    <Folder Include="CVS\" />
+  </ItemGroup>
+</Project>
