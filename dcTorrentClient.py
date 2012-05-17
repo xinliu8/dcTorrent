@@ -18,7 +18,7 @@ from random import seed
 from socket import error as socketerror
 from BitTornado.bencode import bencode
 from BitTornado.natpunch import UPnP_test
-from threading import Event
+from threading import Event, Timer
 from os.path import abspath
 from sys import argv, stdout
 import sys
@@ -68,13 +68,17 @@ class HeadlessDisplayer:
         self.last_update_time = -1
         self.doneflag = Event()
 
+    def setDoneflag(self):
+        self.doneflag.set()
+
     def finished(self):
         self.done = True
         self.percentDone = '100'
         self.timeEst = 'Download Succeeded!'
         self.downRate = ''
         self.display()
-        self.doneflag.set()
+        t = Timer(10.0, self.setDoneflag)
+        t.start()
 
     def failed(self):
         self.done = True
@@ -230,7 +234,7 @@ if __name__ == '__main__':
         sys.exit(0)
 
     # test args
-    #argv += ['--url', 'http://localhost/fileserver/ubuntu.iso.torrent', '--saveas', 'e:\\temp\\ubuntu.iso', '--ip', 'localhost']
+    argv += ['--url', 'http://localhost/fileserver/gparted.iso.torrent', '--saveas', 'e:\\temp\\gparted.iso', '--ip', 'localhost']
 
     # add default configs for DC senario
     argv += ['--timeout', '5', '--timeout_check_interval', '1']
