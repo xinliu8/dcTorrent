@@ -1,4 +1,7 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
+using System;
+using System.IO;
+using System.Threading.Tasks;
 
 namespace CallPython
 {
@@ -6,40 +9,65 @@ namespace CallPython
     {
         static void Main(string[] args)
         {
+            string process = Environment.GetCommandLineArgs()[0];
+            string processName = process;
+            int index = 0;
+            if((index = process.IndexOf('.')) > 0) {
+                processName = process.Substring(0, index);
+            }
+            string verb = args[0];
+            string target = args[1];
+            string arguments = string.Empty;
+            
+            if(args.Length > 2)
+                arguments = string.Join(" ", args[2]);
+
+            ExecutePythonScripts(processName, verb, target, arguments);
         }
 
-        private static void ExecuteCommand(string command, string arguments)
+        private static void ExecutePythonScripts(string processName, string verb, string target, string arguments)
         {
-            int exitCode;
+            string cmdFileName = processName + target + ".cmd";
+            string command = string.Format("python {0}.py {1} {2} {3}", processName, verb, target, arguments);
+            using (var file = new StreamWriter(cmdFileName ))
+            {
+                file.WriteLine(command);
+            }
+
+            ExecuteCommand(cmdFileName);
+        }
+
+        private static void OutputToFile(StreamReader reader, string fileToWrite)
+        {
+            string str;
+            using ( var writer = new StreamWriter(fileToWrite))
+            {
+                while((str=reader.ReadLine())!=null)
+                {
+                    writer.WriteLine(str);
+                }
+            }
+        }
+
+        private static void ExecuteCommand(string command)
+        {
             ProcessStartInfo ProcessInfo;
             Process process;
 
-            ProcessInfo = new ProcessStartInfo(command, arguments);
+            ProcessInfo = new ProcessStartInfo(command);
             ProcessInfo.CreateNoWindow = true;
             ProcessInfo.UseShellExecute = false;
             ProcessInfo.RedirectStandardError = true;
             ProcessInfo.RedirectStandardOutput = true;
 
             process = Process.Start(ProcessInfo);
+            Task.Factory.StartNew(()=>OutputToFile(process.StandardOutput, command+".log"));
+            Task.Factory.StartNew(()=>OutputToFile(process.StandardError, command+".err"));
+
             process.WaitForExit();
-
-            string output = process.StandardOutput.ReadToEnd();
-            string error = process.StandardError.ReadToEnd();
-
-            exitCode = process.ExitCode;
-
-            if (!string.IsNullOrEmpty(output) && !string.IsNullOrWhiteSpace(output))
-            {
-                Trace.TraceInformation("ExecuteCommand: {0} {1}, output: {2}", command, arguments, output);
-            }
-
-            if ((!string.IsNullOrEmpty(error) && !string.IsNullOrWhiteSpace(output)) || exitCode != 0)
-            {
-                Trace.TraceError("ExecuteCommand: {0} {1}, exitCode: {2}, error: {3}", command, arguments, exitCode, error);
-            }
+            Console.WriteLine("Process terminated {0}.", command);
 
             process.Close();
         }
     }
 }
-
