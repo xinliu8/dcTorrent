@@ -1032,25 +1032,50 @@ class Tracker:
                     del self.seedcount[key]
         self.rawserver.add_task(self.expire_downloaders, self.timeout_downloaders_interval)
 
+class TrackerServer:
+    def __init__(self):
+        self.doneflag = Event()
+
+    def track(self, args):
+        if len(args) == 0:
+            print formatDefinitions(defaults, 80)
+            return
+        try:
+            config, files = parseargs(args, defaults, 0, 0)
+        except ValueError, e:
+            print 'error: ' + str(e)
+            print 'run with no arguments for parameter explanations'
+            return
+        r = RawServer(self.doneflag, config['timeout_check_interval'],
+                      config['socket_timeout'], ipv6_enable = config['ipv6_enabled'])
+        t = Tracker(config, r)
+        r.bind(config['port'], config['bind'],
+               reuse = True, ipv6_socket_style = config['ipv6_binds_v4'])
+        r.listen_forever(HTTPHandler(t.get, config['min_time_between_log_flushes']))
+        t.save_state()
+        print '# Shutting down: ' + isotime()
+    
+    def stop(self):
+        self.doneflag.set()
 
 def track(args):
-    if len(args) == 0:
-        print formatDefinitions(defaults, 80)
-        return
-    try:
-        config, files = parseargs(args, defaults, 0, 0)
-    except ValueError, e:
-        print 'error: ' + str(e)
-        print 'run with no arguments for parameter explanations'
-        return
-    r = RawServer(Event(), config['timeout_check_interval'],
-                  config['socket_timeout'], ipv6_enable = config['ipv6_enabled'])
-    t = Tracker(config, r)
-    r.bind(config['port'], config['bind'],
-           reuse = True, ipv6_socket_style = config['ipv6_binds_v4'])
-    r.listen_forever(HTTPHandler(t.get, config['min_time_between_log_flushes']))
-    t.save_state()
-    print '# Shutting down: ' + isotime()
+        if len(args) == 0:
+            print formatDefinitions(defaults, 80)
+            return
+        try:
+            config, files = parseargs(args, defaults, 0, 0)
+        except ValueError, e:
+            print 'error: ' + str(e)
+            print 'run with no arguments for parameter explanations'
+            return
+        r = RawServer(Event(), config['timeout_check_interval'],
+                      config['socket_timeout'], ipv6_enable = config['ipv6_enabled'])
+        t = Tracker(config, r)
+        r.bind(config['port'], config['bind'],
+               reuse = True, ipv6_socket_style = config['ipv6_binds_v4'])
+        r.listen_forever(HTTPHandler(t.get, config['min_time_between_log_flushes']))
+        t.save_state()
+        print '# Shutting down: ' + isotime()
 
 def size_format(s):
     if (s < 1024):

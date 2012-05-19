@@ -2,7 +2,7 @@
 # see LICENSE.txt for license information
 
 from cStringIO import StringIO
-from sys import stdout
+import sys
 import time
 from clock import clock
 from gzip import GzipFile
@@ -164,4 +164,4 @@ class HTTPHandler:
         t = clock()
         if t - self.lastflush > self.minflush:
             self.lastflush = t
-            stdout.flush()
+            sys.stdout.flush()
