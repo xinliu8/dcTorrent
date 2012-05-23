@@ -20,7 +20,6 @@ from BitTornado.bencode import bencode
 from BitTornado.natpunch import UPnP_test
 from threading import Event, Timer
 from os.path import abspath
-from sys import argv, stdout
 import sys
 from sha import sha
 from time import strftime
@@ -133,7 +132,7 @@ class HeadlessDownloader:
         print 'share rating:  ', self.shareRating
         print 'seed status:   ', self.seedStatus
         print 'peer status:   ', self.peerStatus
-        stdout.flush()
+        sys.stdout.flush()
         dpflag.set()        
 
     def chooseFile(self, default, size, saveas, dir):
@@ -150,6 +149,13 @@ class HeadlessDownloader:
         role = params[0]
         if role == 'peer':
             self.isPeer = True
+
+        try:
+            logname = 'peer' if self.isPeer else 'seed'
+            sys.stdout = open('e:\\temp\\{0}.log'.format(logname),'w')
+            print "# Log Started: ", isotime()
+        except:
+            print "**warning** could not redirect stdout to log file: ", sys.exc_info()[0]
 
         params.remove(role)
 
@@ -240,16 +246,5 @@ class HeadlessDownloader:
 
 if __name__ == '__main__':
     
-    if PROFILER:
-        import profile, pstats
-        p = profile.Profile()
-        p.runcall(run, argv[1:])
-        log = open('profile_data.'+strftime('%y%m%d%H%M%S')+'.txt','a')
-        normalstdout = sys.stdout
-        sys.stdout = log
-#        pstats.Stats(p).strip_dirs().sort_stats('cumulative').print_stats()
-        pstats.Stats(p).strip_dirs().sort_stats('time').print_stats()
-        sys.stdout = normalstdout
-    else:
-        h = HeadlessDownloader()
-        h.download(argv[1:])
+    h = HeadlessDownloader()
+    h.download(sys.argv[1:])

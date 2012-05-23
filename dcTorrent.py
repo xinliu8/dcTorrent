@@ -1,9 +1,10 @@
-from sys import *
+import sys
 from BitTornado.BT1.track import TrackerServer
 
 from BitTornado.BT1.makemetafile import make_meta_file, defaults
 from BitTornado.parseargs import parseargs
 from dcTorrentDownload import HeadlessDownloader
+import win32api
 
 def makeTorrent(argv):    
     if len(argv) < 2:
@@ -51,9 +52,13 @@ def testDcTorrent(argv):
         print "Wrong test!"
 
 if __name__ == '__main__':
-
-    #testPeer(argv);
     
+    # stay live after logout
+    win32api.SetConsoleCtrlHandler(lambda x: True, True)
+    argv = sys.argv
+
+    #testSeed(argv);
+
     if len(argv) == 1:
         print '%s start tracker/seed/peer' % argv[0]
         print '%s make torrent' % argv[0]
@@ -72,6 +77,11 @@ if __name__ == '__main__':
         elif target == 'torrent':
             makeTorrent(argv[3:])
         elif target == 'seed' or target == 'peer':
+            try:    
+                sys.stdout = open('e:\\temp\\peer.log','a')
+                print "# Log Started: ", isotime()
+            except:
+                print "**warning** could not redirect stdout to log file: ", sys.exc_info()[0]
             h = HeadlessDownloader()
             h.download(argv[2:])
         else : 
