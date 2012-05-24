@@ -24,12 +24,12 @@ def testSeed(argv):
     argv += ['start', 'seed'];
     argv += ['--url', 'http://localhost/fileserver/gparted.iso.torrent', '--saveas', 'e:\\Applications\\ForVirtualMachine\\gparted.iso', '--ip', '157.59.41.247']
 
-def testPeer(argv):
-    argv += ['start', 'peer'];
-    argv += ['--url', 'http://localhost/fileserver/gparted.iso.torrent', '--saveas', 'e:\\temp\\gparted.iso', '--ip', '127.0.0.1']
+def testDownload(argv):
+    argv += ['start', 'download'];
+    argv += ['--url', 'http://localhost/fileserver/gparted.iso.torrent', '--saveas', 'e:\\temp\\gparted.iso', '--ip', '157.59.41.247']
 
-def testTracker(argv):
-    argv += ['start', 'tracker'];
+def testTrack(argv):
+    argv += ['start', 'track'];
     argv += ['--port', '6969', '--dfile', 'dstate'];
     
 def testMakeTorrent(argv):
@@ -40,14 +40,14 @@ def testDcTorrent(argv):
     target = argv[2]
     argv.remove('test')
     argv.remove(target)
-    if  target == 'tracker':
-        testTracker(argv)
+    if  target == 'track':
+        testTrack(argv)
     elif target == 'torrent':
         testMakeTorrent(argv)
     elif target == 'seed':
         testSeed(argv)
-    elif target == 'peer':
-        testPeer(argv)
+    elif target == 'download':
+        testDownload(argv)
     else:
         print "Wrong test!"
 
@@ -57,7 +57,8 @@ if __name__ == '__main__':
     win32api.SetConsoleCtrlHandler(lambda x: True, True)
     argv = sys.argv
 
-    #testSeed(argv);
+    if len(argv) == 1:
+        testPeer(argv);
 
     if len(argv) == 1:
         print '%s start tracker/seed/peer' % argv[0]
@@ -71,17 +72,12 @@ if __name__ == '__main__':
     if len(argv) > 3:
         verb = argv[1]
         target = argv[2]
-        if target == 'tracker':
+        if target == 'track':
             t = TrackerServer()
             t.track(argv[3:])
         elif target == 'torrent':
             makeTorrent(argv[3:])
-        elif target == 'seed' or target == 'peer':
-            try:    
-                sys.stdout = open('e:\\temp\\peer.log','a')
-                print "# Log Started: ", isotime()
-            except:
-                print "**warning** could not redirect stdout to log file: ", sys.exc_info()[0]
+        elif target == 'seed' or target == 'download':
             h = HeadlessDownloader()
             h.download(argv[2:])
         else : 

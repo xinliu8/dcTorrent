@@ -66,7 +66,7 @@ class HeadlessDownloader:
         self.errors = []
         self.last_update_time = -1
         self.doneflag = Event()
-        self.isPeer = False
+        self.isDownloader = False
 
     def setDoneflag(self):
         self.doneflag.set()
@@ -77,7 +77,7 @@ class HeadlessDownloader:
         self.timeEst = 'Download Succeeded!'
         self.downRate = ''
         self.display()
-        if self.isPeer == True:
+        if self.isDownloader == True:
             t = Timer(10.0, self.setDoneflag)
             t.start()
 
@@ -147,20 +147,17 @@ class HeadlessDownloader:
 
     def download(self, params):
         role = params[0]
-        if role == 'peer':
-            self.isPeer = True
+        if role == 'download':
+            self.isDownloader = True
 
         try:
-            logname = 'peer' if self.isPeer else 'seed'
+            logname = 'download' if self.isDownloader else 'seed'
             sys.stdout = open('e:\\temp\\{0}.log'.format(logname),'w')
             print "# Log Started: ", isotime()
         except:
             print "**warning** could not redirect stdout to log file: ", sys.exc_info()[0]
 
         params.remove(role)
-
-        # add default configs for DC senario
-        #params += ['--timeout', '5', '--timeout_check_interval', '1']
 
         while True:
             configdir = ConfigDir('downloadheadless')

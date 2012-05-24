@@ -97,7 +97,7 @@ defaults = [
         '(0 = disabled)'),
     ('display_interval', .5,
         'time between updates of displayed information'),
-    ('rerequest_interval', 5 * 60,
+    ('rerequest_interval', 10, #5 * 60,
         'time to wait between requesting more peers'),
     ('min_peers', 20, 
         'minimum number of peers to not do rerequesting'),
