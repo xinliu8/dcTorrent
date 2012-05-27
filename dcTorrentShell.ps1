@@ -2,8 +2,9 @@
 
 function Start-Peer($role, $torrent, $filePath, $ip) { 
     $startPeer = {
-        cd $args[0] 
-        python $args[1] dcTorrent.py start $args[2] --url $args[3] --saveas $args[4] --ip $args[5]
+        param($workDir,$pythonConfig,$role,$torrent,$filePath,$ip) 
+        cd $workDir 
+        python $pythonConfig dcTorrent.py start $role --url $torrent --saveas $filePath --ip $ip
     }
     
     Invoke-Command $ip $startPeer -argumentlist $workDir,$pythonConfig,$role,$torrent,$filePath,$ip -credential $cred -AsJob
@@ -11,7 +12,8 @@ function Start-Peer($role, $torrent, $filePath, $ip) {
 
 function Stop-Peer($role, $torrent, $ip) {
     $stopPeer = {
-        wmic Path win32_process Where "CommandLine Like '%python%dcTorrent.py start $args[0] $args[1]%'" Call Terminate
+        param($role, $torrent)
+        wmic Path win32_process Where "CommandLine Like '%python%dcTorrent.py start $role --url $torrent%'" Call Terminate
     }
 
     Invoke-Command $ip $stopPeer -argumentlist $role,$torrent -credential $cred -AsJob
@@ -21,23 +23,24 @@ function Start-Downloader($torrent, $filePath, $ip){
     Start-Peer 'download' $torrent $filePath $ip 
 }
 
-function Stop-Downloader($torrent, $filePath, $ip){ 
-    Stop-Peer 'download' $torrent $filePath $ip 
+function Stop-Downloader($torrent, $ip){ 
+    Stop-Peer 'download' $torrent $ip 
 }
 
 function Start-Seeder($torrent, $filePath, $ip){ 
     Start-Peer 'seed' $torrent $filePath $ip 
 }
 
-function Stop-Seeder($torrent, $filePath, $ip){ 
-    Stop-Peer 'seed' $torrent $filePath $ip 
+function Stop-Seeder($torrent, $ip){ 
+    Stop-Peer 'seed' $torrent $ip 
 }
 
 function Stop-Tracker { 
     $stopTracker = {  
-        cd $args[0]
-        python $args[1] dcTorrentTrackerService.py stop
-        python $args[1] dcTorrentTrackerService.py remove 
+        param($workDir, $pythonConfig)
+        cd $workDir
+        python $pythonConfig dcTorrentTrackerService.py stop
+        python $pythonConfig dcTorrentTrackerService.py remove 
     }
 
     Invoke-Command $tracker $stopTracker -argumentlist $workDir,$pythonConfig -credential $cred
@@ -45,9 +48,10 @@ function Stop-Tracker {
 
 function Start-Tracker { 
     $startTracker = {
-        cd $args[0]
-        python $args[1] dcTorrentTrackerService.py install
-        python $args[1] dcTorrentTrackerService.py start 
+        param($workDir, $pythonConfig)
+        cd $workDir
+        python $pythonConfig dcTorrentTrackerService.py install
+        python $pythonConfig dcTorrentTrackerService.py start 
     }
 
     Invoke-Command $tracker $startTracker -argumentlist $workDir,$pythonConfig -credential $cred
@@ -76,9 +80,10 @@ function Start-Seeders($fileName) {
     }
 }
 
-function Stop-Seeders {
+function Stop-Seeders($fileName) {
+    $torrentURI = "$torrentsServer$fileName.torrent"
     foreach ($seeder in $seeders) {
-        Stop-Seeder $torrent $seeder
+        Stop-Seeder $torrentURI $seeder
     }
 }
 
@@ -90,8 +95,9 @@ function Start-Downloaders($fileName){
     }
 }
 
-function Stop-Downloaders {
+function Stop-Downloaders($fileName) {
+    $torrentURI = "$torrentsServer$fileName.torrent"
     foreach ($downloader in $downloaders) {
-        Stop-Downloader $torrent $downloader
+        Stop-Downloader $torrentURI $downloader
     }
 }

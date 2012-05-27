@@ -1,6 +1,6 @@
 $tracker = '157.59.41.247'
 $seeders = '157.59.41.247'
-$downloaders = '157.59.41.247'
+$downloaders = '157.59.43.63'
 $seederPath = 'E:\Applications\ForVirtualMachine\'
 $downloaderPath = 'E:\temp\'
 $workDir = 'E:\Code\Python\dcTorrent'
