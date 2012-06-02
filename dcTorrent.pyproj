@@ -101,6 +101,7 @@
     <Compile Include="btshowmetainfo.py" />
     <Compile Include="bttrack.py" />
     <Compile Include="bt_MakeCreateIcons.py" />
+    <Compile Include="dcTorrentShell.py" />
     <Compile Include="dcTorrent.py" />
     <Compile Include="dcTorrentDownload.py" />
     <Compile Include="dcTorrentTrackerService.py" />

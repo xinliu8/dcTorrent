@@ -22,7 +22,7 @@ from threading import Event, Timer
 from os.path import abspath
 import sys
 from sha import sha
-from time import strftime
+from time import strftime, gmtime, time
 from BitTornado.clock import clock
 from BitTornado import createPeerID, version
 from BitTornado.ConfigDir import ConfigDir
@@ -50,6 +50,11 @@ def hours(n):
         return '%d hour %02d min %02d sec' % (h, m, s)
     else:
         return '%d min %02d sec' % (m, s)
+
+def isotime(secs = None):
+    if secs == None:
+        secs = time()
+    return strftime('%Y-%m-%d %H:%M UTC', gmtime(secs))
 
 class HeadlessDownloader:
     def __init__(self):
@@ -152,7 +157,7 @@ class HeadlessDownloader:
 
         try:
             logname = 'download' if self.isDownloader else 'seed'
-            sys.stdout = open('e:\\temp\\{0}.log'.format(logname),'w')
+            sys.stdout = open('C:\\Logs\\{0}.log'.format(logname),'w')
             print "# Log Started: ", isotime()
         except:
             print "**warning** could not redirect stdout to log file: ", sys.exc_info()[0]

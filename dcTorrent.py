@@ -4,13 +4,12 @@ from BitTornado.BT1.track import TrackerServer
 from BitTornado.BT1.makemetafile import make_meta_file, defaults
 from BitTornado.parseargs import parseargs
 from dcTorrentDownload import HeadlessDownloader
-import win32api
 
-def makeTorrent(argv):    
+def makeTorrent(argv):
     if len(argv) < 2:
         print 'Usage: ' + ' <trackerurl> <file> [file...] [params...]'
         print
-        exit(2)
+        sys.exit(2)
 
     try:
         config, args = parseargs(argv, defaults, 2, None)
@@ -22,7 +21,8 @@ def makeTorrent(argv):
 
 def testSeed(argv):
     argv += ['start', 'seed'];
-    argv += ['--url', 'http://localhost/fileserver/gparted.iso.torrent', '--saveas', 'e:\\Applications\\ForVirtualMachine\\gparted.iso', '--ip', '157.59.41.247']
+    #argv += ['--url', 'http://localhost/fileserver/gparted.iso.torrent', '--saveas', 'e:\\Applications\\ForVirtualMachine\\gparted.iso', '--ip', '157.59.41.247']
+    argv += ['--responsefile', '..\data\python27.zip.torrent', '--saveas', '..\data\python27.zip']
 
 def testDownload(argv):
     argv += ['start', 'download'];
@@ -31,7 +31,7 @@ def testDownload(argv):
 def testTrack(argv):
     argv += ['start', 'track'];
     argv += ['--port', '6969', '--dfile', 'dstate'];
-    
+
 def testMakeTorrent(argv):
     argv += ['make', 'torrent'];
     argv += ['http://localhost:6969/announce', 'e:\\Applications\\ForVirtualMachine\\gparted.iso', '--target', 'e:\\fileserver\\gparted.iso.torrent'];
@@ -52,20 +52,18 @@ def testDcTorrent(argv):
         print "Wrong test!"
 
 if __name__ == '__main__':
-    
-    # stay live after logout
-    win32api.SetConsoleCtrlHandler(lambda x: True, True)
+
     argv = sys.argv
 
     if len(argv) == 1:
-        testPeer(argv);
+        testSeed(argv);
 
     if len(argv) == 1:
         print '%s start tracker/seed/peer' % argv[0]
         print '%s make torrent' % argv[0]
         print
-        exit(2) # common exit code for syntax error
-    
+        sys.exit(2) # common exit code for syntax error
+
     if len(argv) == 3 and argv[1] == 'test':
         testDcTorrent(argv);
 
@@ -80,6 +78,6 @@ if __name__ == '__main__':
         elif target == 'seed' or target == 'download':
             h = HeadlessDownloader()
             h.download(argv[2:])
-        else : 
+        else :
             print ' wrong arguments'
-            exit(2) # common exit code for syntax error
+            sys.exit(2) # common exit code for syntax error
