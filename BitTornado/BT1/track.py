@@ -1037,6 +1037,9 @@ class TrackerServer:
     def __init__(self):
         self.doneflag = Event()
 
+    def init(self):
+        self.doneflag.clear()
+
     def track(self, args):
         if len(args) == 0:
             print formatDefinitions(defaults, 80)
@@ -1053,6 +1056,7 @@ class TrackerServer:
         r.bind(config['port'], config['bind'],
                reuse = True, ipv6_socket_style = config['ipv6_binds_v4'])
         r.listen_forever(HTTPHandler(t.get, config['min_time_between_log_flushes']))
+        r.shutdown()
         t.save_state()
         print '# Shutting down: ' + isotime()
     

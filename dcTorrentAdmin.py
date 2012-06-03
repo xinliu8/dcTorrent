@@ -1,22 +1,39 @@
 from BitTornado.BT1.track import TrackerServer
-from multiprocessing import Process
-from bottle import Bottle, route, run
+from twisted.web.resource import Resource
+from twisted.internet import reactor, threads
+from twisted.web.server import Site
 
-app = Bottle()
-app.tracker = TrackerServer()
+class DcTorrentAdmin(Resource):
+    def render_GET(self, request):
+        global tracker
+        verb = request.args['action'][0]
+        if verb=='track':
+            port = request.args['port'][0]
+            params = ['--port', port, '--dfile', 'dstate']
+            d = threads.deferToThread(tracker.track, params)
+            d.addCallback(lambda x: tracker.init())
+            return 'Tracker is listening on %s.' % port
+        elif verb=='stop':
+            tracker.stop()
+            return 'Tracker is stopped.'
+        else:
+            return 'Invalid parameter.'
 
-@app.route('/track/<port>')
-#@route('/track/<port>')
-def track(port):
-    params = ['--port', port, '--dfile', 'dstate']
-    Process(target=app.tracker.track, args=(params)).start()
-    return "Tracker is listening on %s!" % port
+class NotFound(Resource):
+    def render_GET(self, request):
+        return "Not Found";
 
-@app.route('/stop/<role>')
-#@route('/stop/<role>')
-def track(role):
-    if role=='track':
-        app.tracker.stop()
-    return "Tracker is stopped!"
+class Dispatcher(Resource):
+    def getChild(self, verb, request):
+        if(verb=='admin'):
+            return DcTorrentAdmin()
+        else:
+            return NotFound()
 
-run(app, host='localhost', port=5678)
+tracker = TrackerServer()
+root = Dispatcher()
+factory = Site(root)
+reactor.listenTCP(5678, factory)
+reactor.run()
+
+#start(int(sys.argv[1]))
