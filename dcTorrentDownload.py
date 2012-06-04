@@ -72,8 +72,9 @@ class HeadlessDownloader:
         self.last_update_time = -1
         self.doneflag = Event()
         self.isDownloader = False
+        self.torrent = ''
 
-    def setDoneflag(self):
+    def shutdown(self):
         self.doneflag.set()
 
     def finished(self):
@@ -83,7 +84,7 @@ class HeadlessDownloader:
         self.downRate = ''
         self.display()
         if self.isDownloader == True:
-            t = Timer(10.0, self.setDoneflag)
+            t = Timer(10.0, self.shutdown)
             t.start()
 
     def failed(self):
@@ -210,7 +211,7 @@ class HeadlessDownloader:
                         continue
                     print "error: Couldn't listen - " + str(e)
                     self.failed()
-                    return
+                    return "error: Couldn't listen - " + str(e)
 
             response = get_response(config['responsefile'], config['url'], self.error)
             if not response:
@@ -245,6 +246,8 @@ class HeadlessDownloader:
             pass
         if not self.done:
             self.failed()
+
+        return self.torrent
 
 if __name__ == '__main__':
     

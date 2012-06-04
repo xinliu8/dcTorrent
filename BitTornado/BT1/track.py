@@ -1036,6 +1036,8 @@ class Tracker:
 class TrackerServer:
     def __init__(self):
         self.doneflag = Event()
+        # track is not invoked yet
+        self.port = 0
 
     def init(self):
         self.doneflag.clear()
@@ -1053,6 +1055,7 @@ class TrackerServer:
         r = RawServer(self.doneflag, config['timeout_check_interval'],
                       config['socket_timeout'], ipv6_enable = config['ipv6_enabled'])
         t = Tracker(config, r)
+        self.port = config['port']
         r.bind(config['port'], config['bind'],
                reuse = True, ipv6_socket_style = config['ipv6_binds_v4'])
         r.listen_forever(HTTPHandler(t.get, config['min_time_between_log_flushes']))
