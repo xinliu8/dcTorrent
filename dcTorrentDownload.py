@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # Written by Bram Cohen
 # see LICENSE.txt for license information
 
@@ -57,7 +55,7 @@ def isotime(secs = None):
     return strftime('%Y-%m-%d %H:%M UTC', gmtime(secs))
 
 class HeadlessDownloader:
-    def __init__(self):
+    def __init__(self, callback):
         self.done = False
         self.file = ''
         self.percentDone = ''
@@ -73,6 +71,15 @@ class HeadlessDownloader:
         self.doneflag = Event()
         self.isDownloader = False
         self.torrent = ''
+        self.logfile = None
+        self.callback = callback
+    
+    def log(self, stuff):
+        if self.logfile == None:
+            print stuff
+        else:
+            self.logfile.write(stuff + '\n')
+            self.logfile.flush()
 
     def shutdown(self):
         self.doneflag.set()
@@ -100,6 +107,12 @@ class HeadlessDownloader:
         self.display()
         self.doneflag.set()
 
+    def displaySlim(self, dpflag = Event(), fractionDone = None, timeEst = None, 
+            downRate = None, upRate = None, activity = None,
+            statistics = None,  **kws):
+
+        dpflag.set()
+
     def display(self, dpflag = Event(), fractionDone = None, timeEst = None, 
             downRate = None, upRate = None, activity = None,
             statistics = None,  **kws):
@@ -126,19 +139,19 @@ class HeadlessDownloader:
            else:
               self.seedStatus = '%d seen recently, plus %.3f distributed copies' % (statistics.numOldSeeds,0.001*int(1000*statistics.numCopies))
            self.peerStatus = '%d seen now, %.1f%% done at %.1f kB/s' % (statistics.numPeers,statistics.percentDone,float(statistics.torrentRate) / (1 << 10))
-        print '\n\n\n\n'
+        self.log( '\n\n\n\n')
         for err in self.errors:
-            print 'ERROR:\n' + err + '\n'
-        print 'saving:        ', self.file
-        print 'percent done:  ', self.percentDone
-        print 'time left:     ', self.timeEst
-        print 'download to:   ', self.downloadTo
-        print 'download rate: ', self.downRate
-        print 'upload rate:   ', self.upRate
-        print 'share rating:  ', self.shareRating
-        print 'seed status:   ', self.seedStatus
-        print 'peer status:   ', self.peerStatus
-        sys.stdout.flush()
+            self.log( 'ERROR:\n' + err + '\n')
+        self.log( 'saving:        '+ self.file)
+        self.log( 'percent done:  '+ self.percentDone)
+        self.log( 'time left:     '+ self.timeEst)
+        self.log( 'download to:   '+ self.downloadTo)
+        self.log( 'download rate: '+ self.downRate)
+        self.log( 'upload rate:   '+ self.upRate)
+        self.log( 'share rating:  '+ self.shareRating)
+        self.log( 'seed status:   '+ self.seedStatus)
+        self.log( 'peer status:   '+ self.peerStatus)
+        
         dpflag.set()        
 
     def chooseFile(self, default, size, saveas, dir):
@@ -156,12 +169,12 @@ class HeadlessDownloader:
         if role == 'download':
             self.isDownloader = True
 
-        try:
-            logname = 'download' if self.isDownloader else 'seed'
-            sys.stdout = open('C:\\Logs\\{0}.log'.format(logname),'w')
-            print "# Log Started: ", isotime()
-        except:
-            print "**warning** could not redirect stdout to log file: ", sys.exc_info()[0]
+        #try:
+        #    logname = 'download' if self.isDownloader else 'seed'
+        #    self.log = open('C:\\Logs\\{0}.log'.format(logname),'a')
+        #    self.log.write( "# Log Started: " + isotime())
+        #except:
+        #    print "warning: could not open log file: "
 
         params.remove(role)
 
@@ -184,12 +197,24 @@ class HeadlessDownloader:
             if config['save_options']:
                 configdir.saveConfig(config)
             configdir.deleteOldCacheData(config['expire_cache_data'])
+            
+            if config['url']:
+                self.torrent = config['url']
+            elif config['responsefile']:
+                self.torrent = config['responsefile']
+
+            if (config['logfile']) and (config['logfile'] != '-'):
+                try:
+                    self.logfile = open(config['logfile'],'a')
+                    self.log( "# Log Started: " + isotime())
+                except:
+                    print "warning: could not open log file."
 
             myid = createPeerID()
             seed(myid)
         
             def disp_exception(text):
-                print text
+                self.log( text)
             rawserver = RawServer(self.doneflag, config['timeout_check_interval'],
                                   config['timeout'], ipv6_enable = config['ipv6_enabled'],
                                   failfunc = self.failed, errorfunc = disp_exception)
@@ -206,10 +231,10 @@ class HeadlessDownloader:
                     break
                 except socketerror, e:
                     if upnp_type and e == UPnP_ERROR:
-                        print 'WARNING: COULD NOT FORWARD VIA UPnP'
+                        self.log( 'WARNING: COULD NOT FORWARD VIA UPnP')
                         upnp_type = 0
                         continue
-                    print "error: Couldn't listen - " + str(e)
+                    self.log( "error: Couldn't listen - " + str(e))
                     self.failed()
                     return "error: Couldn't listen - " + str(e)
 
@@ -218,8 +243,9 @@ class HeadlessDownloader:
                 break
 
             infohash = sha(bencode(response['info'])).digest()
-
-            dow = BT1Download(self.display, self.finished, self.error, disp_exception, self.doneflag,
+            # seeder log doesn't need to be detailed
+            statusfunc = self.display if self.isDownloader else self.displaySlim
+            dow = BT1Download(statusfunc, self.finished, self.error, disp_exception, self.doneflag,
                             config, response, infohash, myid, rawserver, listen_port,
                             configdir)
         
@@ -248,6 +274,9 @@ class HeadlessDownloader:
             self.failed()
 
         return self.torrent
+
+    def downloadCallback(self, result):
+        self.callback(result)
 
 if __name__ == '__main__':
     

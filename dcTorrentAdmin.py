@@ -7,24 +7,43 @@ from twisted.web.resource import Resource
 from twisted.internet import reactor, threads
 from twisted.web.server import Site
 from twisted.web.static import File
+
 from urlparse import urlparse
 import os
+from time import time, gmtime, strftime
 
-defaultDirs = { 'seed':'..\\data\\', 'download':'..\\downloaded\\', 'torrent':'..\\data\\'}
+defaultDirs = { 'seed':'..\\data\\', 'download':'..\\downloaded\\', 'torrent':'..\\data\\', 'log':'..\\logs\\'}
+
+def removeDownloader(result):
+    global downloaders
+    if result.find('.torrent') > -1 and downloaders.has_key(result):
+        del downloaders[result]
+
+# this runs in tracker's thread
+def trackerAnnouceCallback(infohash, ip):
+    statfile = open(defaultDirs['log'] + 'stat.log', 'a')
+    timestr = strftime('%Y-%m-%d %H:%M:%S UTC', gmtime(time()))
+    readableInfohash = ''.join( [ "%02X" % ord( x ) for x in infohash ] )
+    statfile.writelines('{0} finish downloading {1} at {2}\n'.format(ip, readableInfohash, timestr))
+    statfile.flush()
 
 class DcTorrentAdmin(Resource):
-    def removeDownloader(self, result):
-        global downloaders
-        if result.find('.torrent') > -1:
-            del downloaders[torrent]
+    
+    def log(self, stuff):
+        global adminlog
+        adminlog.write(stuff + '\n')
+        adminlog.flush()
 
     def render_GET(self, request):
         global tracker
         global downloaders
+        
+        self.log(request.uri)
+
         verb = request.args['action'][0]
         if verb=='track':
             port = request.args['port'][0]
-            params = ['--port', port, '--dfile', 'dstate']
+            params = ['--port', port, '--dfile', 'dstate', '--logfile', defaultDirs['log'] + 'tracker.log']
             d = threads.deferToThread(tracker.track, params)
             # clear the "done" event for the next start
             d.addCallback(lambda x: tracker.init())
@@ -35,11 +54,11 @@ class DcTorrentAdmin(Resource):
             components = os.path.normpath(parts.path).split(os.sep)
             torrentName = components[len(components)-1]
             filename = torrentName[:torrentName.find('.torrent')]
-            params = [verb, '--url', torrent, '--saveas', defaultDirs[verb] + filename]
-            h = HeadlessDownloader()
+            params = [verb, '--url', torrent, '--saveas', defaultDirs[verb] + filename, '--ip', request.host.host, '--minport', 56969, '--maxport', 56970, '--logfile', '{0}{1}.log'.format(defaultDirs['log'], verb)]
+            h = HeadlessDownloader(removeDownloader)
             downloaders[torrent] = h
             d = threads.deferToThread(h.download, params)
-            d.addCallback(self.removeDownloader)
+            d.addCallback(h.downloadCallback)
             return '{0} {1}.'.format(verb, torrent)
         elif verb=='maketorrent':
             if tracker.port==0:
@@ -66,8 +85,9 @@ class DcTorrentAdmin(Resource):
                 tracker.stop()
             elif role=='seed' or role=='download':
                 torrent = request.args['torrent'][0]
-                h = downloaders[torrent]
-                h.shutdown()
+                if downloaders.has_key(torrent):
+                    h = downloaders[torrent]
+                    h.shutdown()
             return '{0} is stopped.'.format(role)
         else:
             return 'Invalid parameter.'
@@ -85,8 +105,11 @@ class Dispatcher(Resource):
         else:
             return NotFound()
 
-tracker = TrackerServer()
-downloaders = {}
+tracker = TrackerServer(trackerAnnouceCallback)
+if not os.path.exists(defaultDirs['log']):
+    os.makedirs(defaultDirs['log'])
+adminlog = open(defaultDirs['log'] + 'admin.log', 'a')
+downloaders = dict()
 
 root = Dispatcher()
 factory = Site(root)

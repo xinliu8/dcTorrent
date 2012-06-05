@@ -6,7 +6,7 @@ report_email = version_short+'@degreez.net'
 
 from types import StringType
 from hashlib import sha1
-from time import time, clock
+
 try:
     from os import getpid
 except ImportError:
@@ -26,6 +26,7 @@ _idprefix += ('-' * (6-len(_idprefix)))
 _idrandom = [None]
 
 def resetPeerIDs():
+    from time import time, clock
     try:
         f = open('/dev/urandom','rb')
         x = f.read(20)
@@ -60,4 +61,6 @@ resetPeerIDs()
 def createPeerID(ins = '---'):
     assert type(ins) is StringType
     assert len(ins) == 3
+    # change random value in each thread
+    resetPeerIDs()
     return _idprefix + ins + _idrandom[0]

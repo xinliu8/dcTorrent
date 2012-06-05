@@ -199,7 +199,8 @@ def compact_peer_info(ip, port):
     return s
 
 class Tracker:
-    def __init__(self, config, rawserver):
+    def __init__(self, config, rawserver, annouceCallback):
+        self.annouceCallback = annouceCallback
         self.config = config
         self.response_size = config['response_size']
         self.dfile = config['dfile']
@@ -859,6 +860,9 @@ class Tracker:
                 return notallowed
 
             event = params('event')
+            
+            if event == 'completed':
+                self.annouceCallback(infohash, ip)
 
             rsize = self.add_data(infohash, event, ip, paramslist)
 
@@ -1034,10 +1038,11 @@ class Tracker:
         self.rawserver.add_task(self.expire_downloaders, self.timeout_downloaders_interval)
 
 class TrackerServer:
-    def __init__(self):
+    def __init__(self, annouceCallback):
         self.doneflag = Event()
         # track is not invoked yet
         self.port = 0
+        self.annouceCallback = annouceCallback
 
     def init(self):
         self.doneflag.clear()
@@ -1054,7 +1059,7 @@ class TrackerServer:
             return
         r = RawServer(self.doneflag, config['timeout_check_interval'],
                       config['socket_timeout'], ipv6_enable = config['ipv6_enabled'])
-        t = Tracker(config, r)
+        t = Tracker(config, r, self.annouceCallback)
         self.port = config['port']
         r.bind(config['port'], config['bind'],
                reuse = True, ipv6_socket_style = config['ipv6_binds_v4'])

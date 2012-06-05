@@ -157,6 +157,7 @@ defaults = [
         "minutes between automatic flushes to disk (0 = disabled)"),
     ('dedicated_seed_id', '',
         "code to send to tracker identifying as a dedicated seed"),
+    ('logfile', '', 'file to write the tracker logs, use - for stdout (default)'),
     ]
 
 argslistheader = 'Arguments are:\n\n'
