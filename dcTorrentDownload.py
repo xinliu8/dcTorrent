@@ -72,7 +72,7 @@ class HeadlessDownloader:
         self.isDownloader = False
         self.torrent = ''
         self.logfile = None
-        self.callback = callback
+        self.finishCallback = callback
     
     def log(self, stuff):
         if self.logfile == None:
@@ -91,7 +91,7 @@ class HeadlessDownloader:
         self.downRate = ''
         self.display()
         if self.isDownloader == True:
-            t = Timer(10.0, self.shutdown)
+            t = Timer(30.0, self.shutdown)
             t.start()
 
     def failed(self):
@@ -273,10 +273,9 @@ class HeadlessDownloader:
         if not self.done:
             self.failed()
 
-        return self.torrent
+        self.finishCallback(self.torrent)
 
-    def downloadCallback(self, result):
-        self.callback(result)
+        return
 
 if __name__ == '__main__':
     

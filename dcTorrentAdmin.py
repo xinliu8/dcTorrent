@@ -11,12 +11,14 @@ from twisted.web.static import File
 from urlparse import urlparse
 import os
 from time import time, gmtime, strftime
+import shutil
+import sys
 
 defaultDirs = { 'seed':'..\\data\\', 'download':'..\\downloaded\\', 'torrent':'..\\data\\', 'log':'..\\logs\\'}
 
 def removeDownloader(result):
     global downloaders
-    if result.find('.torrent') > -1 and downloaders.has_key(result):
+    if downloaders.has_key(result):
         del downloaders[result]
 
 # this runs in tracker's thread
@@ -58,7 +60,7 @@ class DcTorrentAdmin(Resource):
             h = HeadlessDownloader(removeDownloader)
             downloaders[torrent] = h
             d = threads.deferToThread(h.download, params)
-            d.addCallback(h.downloadCallback)
+            #d.addCallback(h.downloadCallback)
             return '{0} {1}.'.format(verb, torrent)
         elif verb=='maketorrent':
             if tracker.port==0:
@@ -77,7 +79,6 @@ class DcTorrentAdmin(Resource):
             except ValueError, e:
                 return 'error: ' + str(e)
             return 'Make torrent for {0}'.format(source)
-            
         elif verb=='stop':
             role = request.args['role'][0]
             # set the "done" event, but the role thread will stop sometime later
@@ -89,6 +90,17 @@ class DcTorrentAdmin(Resource):
                     h = downloaders[torrent]
                     h.shutdown()
             return '{0} is stopped.'.format(role)
+        elif verb=='clean':
+            try:
+                if os.path.exists(defaultDirs['log'] + 'stat.log'):
+                    os.remove(defaultDirs['log'] + 'stat.log')
+                if os.path.exists(defaultDirs['log'] + 'download.log'):
+                    os.remove(defaultDirs['log'] + 'download.log')
+                if os.path.exists(defaultDirs['download']):
+                    shutil.rmtree(defaultDirs['download'])
+            except:
+                self.log(sys.exc_info()[0])
+            return 'downloads are cleaned.'
         else:
             return 'Invalid parameter.'
 
