@@ -5,7 +5,6 @@ from dcTorrentDownload import HeadlessDownloader
 
 from twisted.web.resource import Resource
 from twisted.internet import reactor, threads
-from twisted.internet import protocol
 from twisted.web.server import Site
 from twisted.web.static import File
 
@@ -16,28 +15,6 @@ import shutil
 import sys
 
 defaultDirs = { 'seed':'..\\data\\', 'download':'..\\downloaded\\', 'torrent':'..\\data\\', 'log':'..\\logs\\'}
-
-class MyPP(protocol.ProcessProtocol):
-    def __init__(self):
-        self.data = ""
-    def connectionMade(self):
-        self.transport.closeStdin() # tell them we're done
-    def outReceived(self, data):
-        print "outReceived! with %d bytes!" % len(data)
-        self.data = self.data + data
-    def errReceived(self, data):
-        print "errReceived! with %d bytes!" % len(data)
-    def inConnectionLost(self):
-        print "inConnectionLost! stdin is closed! (we probably did it)"
-    def outConnectionLost(self):
-        print "outConnectionLost! The child closed their stdout!"
-        print "I saw them write:", self.data
-    def errConnectionLost(self):
-        print "errConnectionLost! The child closed their stderr."
-    def processExited(self, reason):
-        print "processExited, status %d" % (reason.value.exitCode,)
-    def processEnded(self, reason):
-        print "processEnded, status %d" % (reason.value.exitCode,)
 
 def removeDownloader(result):
     global downloaders
@@ -60,7 +37,8 @@ class DcTorrentAdmin(Resource):
         adminlog.flush()
 
     def render_GET(self, request):
-        global tracker, downloaders, processes
+        global tracker
+        global downloaders
         
         self.log(request.uri)
 
@@ -68,14 +46,9 @@ class DcTorrentAdmin(Resource):
         if verb=='track':
             port = request.args['port'][0]
             params = ['--port', port, '--dfile', 'dstate', '--logfile', defaultDirs['log'] + 'tracker.log']
-            pp = MyPP()
-            program = ["C:\Python27\python.exe", "dcTorrent.py", "start", "track"]
-            args = program + params
-            trackerProcess = reactor.spawnProcess(pp, args[0], args, env = os.environ)
-            processes['tracker'] = trackerProcess
-            #d = threads.deferToThread(tracker.track, params)
+            d = threads.deferToThread(tracker.track, params)
             # clear the "done" event for the next start
-            #d.addCallback(lambda x: tracker.init())
+            d.addCallback(lambda x: tracker.init())
             return 'Tracker is listening on {0}.'.format(port)
         elif verb=='seed' or verb=='download':
             torrent = request.args['torrent'][0]
@@ -110,9 +83,7 @@ class DcTorrentAdmin(Resource):
             role = request.args['role'][0]
             # set the "done" event, but the role thread will stop sometime later
             if role=='track':
-                #tracker.stop()
-                if processes.has_key('tracker'):
-                    processes['tracker'].signalProcess('KILL')
+                tracker.stop()
             elif role=='seed' or role=='download':
                 torrent = request.args['torrent'][0]
                 if downloaders.has_key(torrent):
@@ -151,7 +122,7 @@ if not os.path.exists(defaultDirs['log']):
     os.makedirs(defaultDirs['log'])
 adminlog = open(defaultDirs['log'] + 'admin.log', 'a')
 downloaders = dict()
-processes = dict()
+
 root = Dispatcher()
 factory = Site(root)
 reactor.listenTCP(5678, factory)

@@ -1,5 +1,5 @@
 import sys
-from BitTornado.BT1.track import TrackerServer
+from BitTornado.BT1.track import TrackerServer, track
 
 from BitTornado.BT1.makemetafile import make_meta_file, defaults
 from BitTornado.parseargs import parseargs
@@ -51,6 +51,13 @@ def testDcTorrent(argv):
     else:
         print "Wrong test!"
 
+def trackerAnnouceCallback(infohash, ip):
+    statfile = open(defaultDirs['log'] + 'stat.log', 'a')
+    timestr = strftime('%Y-%m-%d %H:%M:%S UTC', gmtime(time()))
+    readableInfohash = ''.join( [ "%02X" % ord( x ) for x in infohash ] )
+    statfile.writelines('{0} finish downloading {1} at {2}\n'.format(ip, readableInfohash, timestr))
+    statfile.flush()
+
 if __name__ == '__main__':
 
     argv = sys.argv
@@ -71,8 +78,8 @@ if __name__ == '__main__':
         verb = argv[1]
         target = argv[2]
         if target == 'track':
-            t = TrackerServer()
-            t.track(argv[3:])
+            t = TrackerServer(trackerAnnouceCallback)
+            t.track(argv[3:])            
         elif target == 'torrent':
             makeTorrent(argv[3:])
         elif target == 'seed' or target == 'download':
