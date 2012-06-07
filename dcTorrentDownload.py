@@ -55,7 +55,7 @@ def isotime(secs = None):
     return strftime('%Y-%m-%d %H:%M UTC', gmtime(secs))
 
 class HeadlessDownloader:
-    def __init__(self, callback):
+    def __init__(self):
         self.done = False
         self.file = ''
         self.percentDone = ''
@@ -72,8 +72,7 @@ class HeadlessDownloader:
         self.isDownloader = False
         self.torrent = ''
         self.logfile = None
-        self.finishCallback = callback
-    
+        
     def log(self, stuff):
         if self.logfile == None:
             print stuff
@@ -272,8 +271,6 @@ class HeadlessDownloader:
             pass
         if not self.done:
             self.failed()
-
-        self.finishCallback(self.torrent)
 
         return
 

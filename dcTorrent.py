@@ -4,7 +4,8 @@ from BitTornado.BT1.track import TrackerServer, track
 from BitTornado.BT1.makemetafile import make_meta_file, defaults
 from BitTornado.parseargs import parseargs
 from dcTorrentDownload import HeadlessDownloader
-
+from dcTorrentDefaults import defaultDirs
+from time import time, gmtime, strftime
 def makeTorrent(argv):
     if len(argv) < 2:
         print 'Usage: ' + ' <trackerurl> <file> [file...] [params...]'
@@ -21,8 +22,8 @@ def makeTorrent(argv):
 
 def testSeed(argv):
     argv += ['start', 'seed'];
-    #argv += ['--url', 'http://localhost/fileserver/gparted.iso.torrent', '--saveas', 'e:\\Applications\\ForVirtualMachine\\gparted.iso', '--ip', '157.59.41.247']
-    argv += ['--responsefile', '..\data\python27.zip.torrent', '--saveas', '..\data\python27.zip']
+    argv += ['--url', 'http://localhost/fileserver/gparted.iso.torrent', '--saveas', 'e:\\Applications\\ForVirtualMachine\\gparted.iso', '--ip', '157.59.41.247']
+    #argv += ['--responsefile', '..\data\python27.zip.torrent', '--saveas', '..\data\python27.zip']
 
 def testDownload(argv):
     argv += ['start', 'download'];
@@ -63,7 +64,7 @@ if __name__ == '__main__':
     argv = sys.argv
 
     if len(argv) == 1:
-        testSeed(argv);
+        testDownload(argv);
 
     if len(argv) == 1:
         print '%s start tracker/seed/peer' % argv[0]

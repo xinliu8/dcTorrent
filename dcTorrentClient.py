@@ -1,12 +1,14 @@
 import sys
 import httplib
 from time import strftime, gmtime, time, sleep
+from dcTorrentDefaults import defaultSettings
+import socket
 
 tracker = ''
 seeders = []
 downloaders = []
-adminPort = '5678'
 filename = 'gparted.iso'
+adminPort = defaultSettings['adminPort']
 
 def startSeed(ip, torrent):
     request = '/admin?action=seed&torrent={0}'.format(torrent)
@@ -29,7 +31,7 @@ def stopDownload(ip, torrent):
     httpGet(site, request)
 
 def startTrack(ip):
-    request = '/admin?action=track&port=6969'
+    request = '/admin?action=track&port={0}'.format(defaultSettings['trackerPort'])
     site = ip + ':' + adminPort
     httpGet(site, request)
 
@@ -54,12 +56,12 @@ def httpGet(site, request):
     conn.request("GET", request)
     try:
         r = conn.getresponse()
-        print 'Result is {0} {1}'.format(r.status, r.reason)
-    except e:
-        print str(e)
+        print 'Result is {0} {1} {2}'.format(r.status, r.reason, r.read())
+    except:
+        print sys.exc_info()[0]
 
 def localhostScenario():
-    global tracker, seeders, downloaders
+    global tracker, seeders, downloaders, filename
     tracker = '157.59.41.247'
     seeders = ['157.59.41.247']
     downloaders = ['157.59.41.247']
@@ -75,7 +77,7 @@ def cloudSmallScenario():
     tracker = '10.146.35.100'
     seeders = ['10.146.35.100']
     downloaders = ['10.146.35.100', '10.146.35.120']
-    filename = 'python27.zip'
+    filename = 'longhorn.vhd'
 
 def cloudMiddleScenario():
     global tracker, seeders, downloaders, filename
@@ -84,10 +86,23 @@ def cloudMiddleScenario():
     downloaders = ['10.146.35.120', '10.146.35.130', '10.146.35.140', '10.146.37.100', '10.146.37.140', '10.146.39.110', '10.146.39.120', '10.146.39.130']
     filename = 'longhorn.vhd'
 
+def isTrackerUp(tracker):
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        s.connect((tracker, int(defaultSettings['trackerPort'])))
+        s.shutdown(2)
+        return True    
+    except:
+        return False
+
 def startAll():
     global tracker, seeders, downloaders, filename
     startTrack(tracker)
-    sleep(1)
+    while True:
+        sleep(0.2)
+        if isTrackerUp(tracker) == True:
+            break;
+
     makeTorrent(tracker, filename)
     torrentUri = "http://{0}:{1}/files/{2}.torrent".format(tracker, adminPort, filename)
     for seeder in seeders:
@@ -126,7 +141,12 @@ def touchStatLog():
 
 if __name__ == '__main__':
     
-    localVMScenario()
+    localhostScenario()
+
+    if len(sys.argv)==1:
+        touchStatLog()
+        startAll()
+        sys.exit(0)
 
     if sys.argv[1]=='start':
         touchStatLog()
