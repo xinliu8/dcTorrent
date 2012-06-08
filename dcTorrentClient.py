@@ -62,9 +62,9 @@ def httpGet(site, request):
 
 def localhostScenario():
     global tracker, seeders, downloaders, filename
-    tracker = '157.59.41.247'
-    seeders = ['157.59.41.247']
-    downloaders = ['157.59.41.247']
+    tracker = '127.0.0.1'
+    seeders = ['127.0.0.1']
+    downloaders = ['127.0.0.1']
 
 def localVMScenario():
     global tracker, seeders, downloaders
@@ -76,7 +76,7 @@ def cloudSmallScenario():
     global tracker, seeders, downloaders, filename
     tracker = '10.146.35.100'
     seeders = ['10.146.35.100']
-    downloaders = ['10.146.35.100', '10.146.35.120']
+    downloaders = ['10.146.35.120']
     filename = 'longhorn.vhd'
 
 def cloudMiddleScenario():
@@ -141,7 +141,7 @@ def touchStatLog():
 
 if __name__ == '__main__':
     
-    localhostScenario()
+    cloudSmallScenario()
 
     if len(sys.argv)==1:
         touchStatLog()

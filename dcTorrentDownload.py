@@ -24,6 +24,7 @@ from time import strftime, gmtime, time
 from BitTornado.clock import clock
 from BitTornado import createPeerID, version
 from BitTornado.ConfigDir import ConfigDir
+from dcTorrentDefaults import adjustDownloader
 
 assert sys.version >= '2', "Install Python 2.0 or greater"
 try:
@@ -209,6 +210,9 @@ class HeadlessDownloader:
                 except:
                     print "warning: could not open log file."
 
+            for k in adjustDownloader:
+                config[k] = adjustDownloader[k]
+
             myid = createPeerID()
             seed(myid)
         
@@ -218,9 +222,6 @@ class HeadlessDownloader:
                                   config['timeout'], ipv6_enable = config['ipv6_enabled'],
                                   failfunc = self.failed, errorfunc = disp_exception)
             upnp_type = UPnP_test(config['upnp_nat_access'])
-
-            #disable UPnP for DC scenario
-            upnp_type = 0
 
             while True:
                 try:

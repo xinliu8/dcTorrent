@@ -120,7 +120,9 @@ class DcTorrentAdmin(Resource):
             components = os.path.normpath(parts.path).split(os.sep)
             torrentName = components[len(components)-1]
             filename = torrentName[:torrentName.find('.torrent')]
-            params = [verb, '--url', torrent, '--saveas', defaultDirs[verb] + filename, '--ip', request.host.host, '--minport', '56969', '--maxport', '56970', '--logfile', '{0}{1}.log'.format(defaultDirs['log'], verb)]
+            params = [verb, '--url', torrent, '--saveas', defaultDirs[verb] + filename, '--ip', request.host.host, '--logfile', '{0}{1}.log'.format(defaultDirs['log'], verb)]
+            #if verb == 'seed':
+            #    params += ['--super_seeder', '1']
             program = [defaultDirs['python'] + "python.exe", "dcTorrent.py", "start"]
             args = program + params
             pp = MyPP(verb + ':' + torrent)
@@ -171,7 +173,7 @@ class DcTorrentAdmin(Resource):
                 if os.path.exists(defaultDirs['download']):
                     shutil.rmtree(defaultDirs['download'])
             except:
-                self.log(sys.exc_info()[0])
+                self.log(str(sys.exc_info()[0]))
             return 'downloads are cleaned.'
         else:
             return 'Invalid parameter.'

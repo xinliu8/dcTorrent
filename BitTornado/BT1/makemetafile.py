@@ -89,6 +89,9 @@ def make_meta_file(file, url, params = {}, flag = Event(),
             piece_len_exp = 16          #   64K pieces
         else:                           # < 4M =
             piece_len_exp = 15          #   32K pieces
+
+    # use larger piece size for dcTorrent
+    piece_len_exp += 0
     piece_length = 2 ** piece_len_exp
 
     encoding = None
