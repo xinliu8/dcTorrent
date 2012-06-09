@@ -22,12 +22,13 @@ def makeTorrent(argv):
 
 def testSeed(argv):
     argv += ['start', 'seed'];
-    argv += ['--url', 'http://localhost/fileserver/gparted.iso.torrent', '--saveas', 'e:\\Applications\\ForVirtualMachine\\gparted.iso', '--ip', '157.59.41.247']
-    #argv += ['--responsefile', '..\data\python27.zip.torrent', '--saveas', '..\data\python27.zip']
+    #argv += ['--url', 'http://localhost/fileserver/gparted.iso.torrent', '--saveas', 'e:\\Applications\\ForVirtualMachine\\gparted.iso', '--ip', '157.59.41.247']
+    argv += ['--responsefile', '..\data\gparted.iso.torrent', '--saveas', '..\data\gparted.iso', '--ip', '127.0.0.1']
 
 def testDownload(argv):
     argv += ['start', 'download'];
-    argv += ['--url', 'http://localhost/fileserver/gparted.iso.torrent', '--saveas', 'e:\\temp\\gparted.iso', '--ip', '157.59.41.247']
+    #argv += ['--url', 'http://localhost/fileserver/gparted.iso.torrent', '--saveas', 'e:\\temp\\gparted.iso', '--ip', '157.59.41.247']
+    argv += ['--responsefile', '..\data\gparted.iso.torrent', '--saveas', '..\downloaded\gparted.iso']
 
 def testTrack(argv):
     argv += ['start', 'track'];
@@ -35,7 +36,7 @@ def testTrack(argv):
 
 def testMakeTorrent(argv):
     argv += ['make', 'torrent'];
-    argv += ['http://localhost:6969/announce', 'e:\\Applications\\ForVirtualMachine\\gparted.iso', '--target', 'e:\\fileserver\\gparted.iso.torrent'];
+    argv += ['http://127.0.0.1:6969/announce', '..\data\gparted.iso', '--target', '..\data\gparted.iso.torrent'];
 
 def testDcTorrent(argv):
     target = argv[2]
