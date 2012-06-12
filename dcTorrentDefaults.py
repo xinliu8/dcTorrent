@@ -3,9 +3,9 @@ defaultDirs = {
                'download':'..\\downloaded\\', 
                'torrent':'..\\data\\', 
                'log':'..\\logs\\',
-               #'python': 'C:\\Python27\\'
+               'python': 'C:\\Python27\\'
                # change this before deploy
-               'python': 'd:\\Users\\rd\\Python27\\'
+               #'python': 'd:\\Users\\rd\\Python27\\'
               }
 
 defaultSettings = { 

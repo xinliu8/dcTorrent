@@ -82,6 +82,7 @@
     <Compile Include="dcTorrentClient.py" />
     <Compile Include="dcTorrentAdmin.py" />
     <Compile Include="dcTorrent.py" />
+    <Compile Include="dcTorrentDefaults.py" />
     <Compile Include="dcTorrentDownload.py" />
     <Compile Include="dcTorrentTrackerService.py" />
   </ItemGroup>

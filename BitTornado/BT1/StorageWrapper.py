@@ -758,9 +758,10 @@ class StorageWrapper:
             data = self.read_raw(self.places[index], 0, self._piecelen(index))
             if data is None:
                 return None
-            if sha(data[:]).digest() != self.hashes[index]:
-                self.failed('told file complete on start-up, but piece failed hash check')
-                return None
+            # disable hash check for dcTorrent performance
+            #if sha(data[:]).digest() != self.hashes[index]:
+            #    self.failed('told file complete on start-up, but piece failed hash check')
+            #    return None
             self.waschecked[index] = True
             if length == -1 and begin == 0:
                 return data     # optimization
