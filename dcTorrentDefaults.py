@@ -14,20 +14,20 @@ defaultSettings = {
               }
 
 adjustDownloader = {
-                    'download_slice_size': 2 ** 14,
+                    'download_slice_size': 2 ** 13, #2 ** 14,
                     'minport': 56969, #10000
                     'maxport': 56970, #60000
                     'timeout': 300.0,
                     'timeout_check_interval': 60.0,
-                    'max_slice_length': 2 ** 17,
+                    'max_slice_length': 2 ** 30, #2 ** 17,
                     'upnp_nat_access': 0, #1,
                     'rerequest_interval': 15, #5 * 60,
                     'http_timeout': 60, 
                     'max_upload_rate': 0,
                     'max_download_rate': 0,
-                    'alloc_type': 'normal',
+                    'alloc_type': 'normal', #'normal',
                     'alloc_rate': 2.0,
-                    'write_buffer_size': 4,
+                    'write_buffer_size': 4, #4,
                     'breakup_seed_bitfield': 0, #1,
                     'snub_time': 30.0,
                     'super_seeder': 0,

@@ -686,7 +686,11 @@ class StorageWrapper:
         del self.dirty[index]
         if not self._flush_buffer(index):
             return True
+        
         length = self._piecelen(index)
+
+        # disable piece hash check for dcTorrent performance
+        '''
         data = self.read_raw(self.places[index], 0, length,
                                  flush_first = self.triple_check)
         if data is None:
@@ -712,6 +716,7 @@ class StorageWrapper:
                 del self.failed_pieces[index] # found the culprit already
             
             return False
+        '''        
 
         self.have[index] = True
         self.inactive_requests[index] = None
