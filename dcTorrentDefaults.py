@@ -14,7 +14,7 @@ defaultSettings = {
               }
 
 adjustDownloader = {
-                    'download_slice_size': 2 ** 13, #2 ** 14,
+                    'download_slice_size': 2 ** 14, #2 ** 14,
                     'minport': 56969, #10000
                     'maxport': 56970, #60000
                     'timeout': 300.0,
@@ -35,5 +35,7 @@ adjustDownloader = {
                     'auto_kick': 0, #1,
                     'double_check': 0, #1,
                     'lock_files': 0, #1,
-                    'spew': 1
+                    'spew': 1,
+                    'max_initiate': 40, #40,
+                    'max_uploads': 7, #7
                     }

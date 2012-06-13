@@ -79,10 +79,10 @@
     <Compile Include="BitTornado\torrentlistparse.py" />
     <Compile Include="BitTornado\zurllib.py" />
     <Compile Include="BitTornado\__init__.py" />
+    <Compile Include="dcTorrentDefaults.py" />
     <Compile Include="dcTorrentClient.py" />
     <Compile Include="dcTorrentAdmin.py" />
     <Compile Include="dcTorrent.py" />
-    <Compile Include="dcTorrentDefaults.py" />
     <Compile Include="dcTorrentDownload.py" />
     <Compile Include="dcTorrentTrackerService.py" />
   </ItemGroup>

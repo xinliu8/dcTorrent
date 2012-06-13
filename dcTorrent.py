@@ -65,7 +65,7 @@ if __name__ == '__main__':
     argv = sys.argv
 
     if len(argv) == 1:
-        testSeed(argv);
+        testDownload(argv);
 
     if len(argv) == 1:
         print '%s start tracker/seed/peer' % argv[0]

@@ -3,6 +3,7 @@
 
 from random import randrange, shuffle
 from BitTornado.clock import clock
+import socket, struct, math
 try:
     True
 except:
@@ -21,6 +22,8 @@ class Choker:
         self.done = done
         self.super_seed = False
         self.paused = False
+        #this may or may not return local address, dcTorrent
+        self.my_ip = socket.gethostbyname(socket.gethostname())
         schedule(self._round_robin, 5)
 
     def set_round_robin_period(self, x):
@@ -97,10 +100,20 @@ class Choker:
         for u in to_unchoke:
             u.unchoke()
 
+    def _compareIp(self, connection):
+        myip = struct.unpack('!L',socket.inet_aton(self.my_ip))[0]
+        peerip = struct.unpack('!L',socket.inet_aton(connection.download.ip))[0]
+        diff = math.fabs(myip - peerip)
+        return diff
+
     def connection_made(self, connection, p = None):
+        import socket, math
         if p is None:
             p = randrange(-2, len(self.connections) + 1)
         self.connections.insert(max(p, 0), connection)
+        # topoloy aware here for dcTorrent
+        
+        self.connections.sort(key=self._compareIp)
         self._rechoke()
 
     def connection_lost(self, connection):
