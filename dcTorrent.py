@@ -6,6 +6,8 @@ from BitTornado.parseargs import parseargs
 from dcTorrentDownload import HeadlessDownloader
 from dcTorrentDefaults import defaultDirs
 from time import time, gmtime, strftime
+import logging.config
+
 def makeTorrent(argv):
     if len(argv) < 2:
         print 'Usage: ' + ' <trackerurl> <file> [file...] [params...]'
@@ -61,11 +63,13 @@ def trackerAnnouceCallback(infohash, ip):
     statfile.flush()
 
 if __name__ == '__main__':
+    
+    logging.config.fileConfig('logging.conf')
 
     argv = sys.argv
 
     if len(argv) == 1:
-        testDownload(argv);
+        testSeed(argv);
 
     if len(argv) == 1:
         print '%s start tracker/seed/peer' % argv[0]

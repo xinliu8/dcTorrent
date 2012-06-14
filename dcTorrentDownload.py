@@ -25,6 +25,7 @@ from BitTornado.clock import clock
 from BitTornado import createPeerID, version
 from BitTornado.ConfigDir import ConfigDir
 from dcTorrentDefaults import adjustDownloader
+import logging
 
 assert sys.version >= '2', "Install Python 2.0 or greater"
 try:
@@ -72,15 +73,11 @@ class HeadlessDownloader:
         self.doneflag = Event()
         self.isDownloader = False
         self.torrent = ''
-        self.logfile = None
+        self.averageDownSpeed = 0
+        self.averageUpSpeed = 0
+        self.callbackCount = 0
+        self.downloads = ''
         
-    def log(self, stuff):
-        if self.logfile == None:
-            print stuff
-        else:
-            self.logfile.write(stuff + '\n')
-            self.logfile.flush()
-
     def shutdown(self):
         self.doneflag.set()
 
@@ -90,6 +87,7 @@ class HeadlessDownloader:
         self.timeEst = 'Download Succeeded!'
         self.downRate = ''
         self.display()
+        self.logger.info('download {0} complete, down {1:.1f} kB/s, up {2:.1f} kB/s'.format(self.downloadTo, self.averageDownSpeed / (1<<10), self.averageUpSpeed /(1<<10)))
         if self.isDownloader == True:
             t = Timer(30.0, self.shutdown)
             t.start()
@@ -119,6 +117,7 @@ class HeadlessDownloader:
         if self.last_update_time + 0.1 > clock() and fractionDone not in (0.0, 1.0) and activity is not None:
             return
         self.last_update_time = clock()        
+        self.callbackCount +=1
         if fractionDone is not None:
             self.percentDone = str(float(int(fractionDone * 1000)) / 10)
         if timeEst is not None:
@@ -127,8 +126,10 @@ class HeadlessDownloader:
             self.timeEst = activity
         if downRate is not None:
             self.downRate = '%.1f kB/s' % (float(downRate) / (1 << 10))
+            self.averageDownSpeed += (float(downRate) - self.averageDownSpeed)/self.callbackCount
         if upRate is not None:
             self.upRate = '%.1f kB/s' % (float(upRate) / (1 << 10))
+            self.averageUpSpeed += (float(upRate)-self.averageUpSpeed)/self.callbackCount
         if statistics is not None:
            if (statistics.shareRating < 0) or (statistics.shareRating > 100):
                self.shareRating = 'oo  (%.1f MB up / %.1f MB down)' % (float(statistics.upTotal) / (1<<20), float(statistics.downTotal) / (1<<20))
@@ -139,19 +140,24 @@ class HeadlessDownloader:
            else:
               self.seedStatus = '%d seen recently, plus %.3f distributed copies' % (statistics.numOldSeeds,0.001*int(1000*statistics.numCopies))
            self.peerStatus = '%d seen now, %.1f%% done at %.1f kB/s' % (statistics.numPeers,statistics.percentDone,float(statistics.torrentRate) / (1 << 10))
-        self.log( '\n\n\n\n')
+           self.downloads = ' '.join(statistics.downloads)
+        self.logger.debug( '\n\n\n\n')
         for err in self.errors:
-            self.log( 'ERROR:\n' + err + '\n')
-        self.log( 'saving:        '+ self.file)
-        self.log( 'percent done:  '+ self.percentDone)
-        self.log( 'time left:     '+ self.timeEst)
-        self.log( 'download to:   '+ self.downloadTo)
-        self.log( 'download rate: '+ self.downRate)
-        self.log( 'upload rate:   '+ self.upRate)
-        self.log( 'share rating:  '+ self.shareRating)
-        self.log( 'seed status:   '+ self.seedStatus)
-        self.log( 'peer status:   '+ self.peerStatus)
-        
+            self.logger.error( 'ERROR:\n' + err + '\n')
+        self.logger.debug( 'saving:        '+ self.file)
+        self.logger.debug( 'percent done:  '+ self.percentDone)
+        self.logger.debug( 'time left:     '+ self.timeEst)
+        self.logger.debug( 'download to:   '+ self.downloadTo)
+        self.logger.debug( 'download rate: '+ self.downRate)
+        self.logger.debug( 'upload rate:   '+ self.upRate)
+        self.logger.debug( 'share rating:  '+ self.shareRating)
+        self.logger.debug( 'seed status:   '+ self.seedStatus)
+        self.logger.debug( 'peer status:   '+ self.peerStatus)
+        self.logger.debug( 'all downloads:   '+ self.downloads)
+        self.logger.debug( 'average downRate: {0:.1f} kB/s'.format(self.averageDownSpeed/(1<<10)))
+        self.logger.debug( 'average upRate: {0:.1f} kB/s'.format(self.averageUpSpeed/(1<<10)))
+        self.logger.debug( 'call count: {0}'.format(self.callbackCount))
+
         dpflag.set()        
 
     def chooseFile(self, default, size, saveas, dir):
@@ -169,12 +175,7 @@ class HeadlessDownloader:
         if role == 'download':
             self.isDownloader = True
 
-        #try:
-        #    logname = 'download' if self.isDownloader else 'seed'
-        #    self.log = open('C:\\Logs\\{0}.log'.format(logname),'a')
-        #    self.log.write( "# Log Started: " + isotime())
-        #except:
-        #    print "warning: could not open log file: "
+        self.logger = logging.getLogger(role)
 
         params.remove(role)
 
@@ -203,12 +204,14 @@ class HeadlessDownloader:
             elif config['responsefile']:
                 self.torrent = config['responsefile']
 
+            '''
             if (config['logfile']) and (config['logfile'] != '-'):
                 try:
-                    self.logfile = open(config['logfile'],'a')
-                    self.log( "# Log Started: " + isotime())
+                    self.logger.infofile = open(config['logfile'],'a')
+                    self.logger.info( "# Log Started: " + isotime())
                 except:
                     print "warning: could not open log file."
+            '''
 
             for k in adjustDownloader:
                 config[k] = adjustDownloader[k]
@@ -217,7 +220,7 @@ class HeadlessDownloader:
             seed(myid)
         
             def disp_exception(text):
-                self.log( text)
+                self.logger.info( text)
             rawserver = RawServer(self.doneflag, config['timeout_check_interval'],
                                   config['timeout'], ipv6_enable = config['ipv6_enabled'],
                                   failfunc = self.failed, errorfunc = disp_exception)
@@ -231,10 +234,10 @@ class HeadlessDownloader:
                     break
                 except socketerror, e:
                     if upnp_type and e == UPnP_ERROR:
-                        self.log( 'WARNING: COULD NOT FORWARD VIA UPnP')
+                        self.logger.info( 'WARNING: COULD NOT FORWARD VIA UPnP')
                         upnp_type = 0
                         continue
-                    self.log( "error: Couldn't listen - " + str(e))
+                    self.logger.info( "error: Couldn't listen - " + str(e))
                     self.failed()
                     return "error: Couldn't listen - " + str(e)
 

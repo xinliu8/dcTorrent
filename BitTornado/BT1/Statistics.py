@@ -77,6 +77,7 @@ class Statistics:
         s.numSeeds = self.picker.seeds_connected
         s.numOldSeeds = self.downloader.num_disconnected_seeds()
         s.numPeers = len(self.downloader.downloads)-s.numSeeds
+        s.downloads = [download.ip for download in self.downloader.downloads]
         s.numCopies = 0.0
         for i in self.picker.crosscount:
             if i==0:

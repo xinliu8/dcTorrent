@@ -1,6 +1,6 @@
 # Written by Bram Cohen
 # see LICENSE.txt for license information
-
+import logging
 from BitTornado.parseargs import parseargs, formatDefinitions
 from BitTornado.RawServer import RawServer, autodetect_ipv6, autodetect_socket_style
 from BitTornado.HTTPHandler import HTTPHandler, months, weekdays
@@ -284,15 +284,8 @@ class Tracker:
         rawserver.add_task(self.expire_downloaders, self.timeout_downloaders_interval)
         self.logfile = None
         self.log = None
-        if (config['logfile']) and (config['logfile'] != '-'):
-            try:
-                self.logfile = config['logfile']
-                self.log = open(self.logfile,'a')
-                sys.stdout = self.log
-                print "# Log Started: ", isotime()
-            except:
-                print "**warning** could not redirect stdout to log file: ", sys.exc_info()[0]
-
+        self.logger = logging.getLogger('track')
+        
         if config['hupmonitor']:
             def huphandler(signum, frame, self = self):
                 try:

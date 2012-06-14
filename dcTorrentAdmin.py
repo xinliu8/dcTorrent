@@ -1,3 +1,5 @@
+import logging.config
+
 from BitTornado.BT1.track import TrackerServer
 from BitTornado.BT1.makemetafile import make_meta_file, defaults
 from BitTornado.parseargs import parseargs
@@ -16,32 +18,37 @@ import shutil
 import sys
 from multiprocessing import Lock
 
+
 class MyPP(protocol.ProcessProtocol):
     def __init__(self, name):
         self.data = ""
         self.name = name
+        self.logger = logging.getLogger('{0}'.format(self.__class__.__name__))
+
     def connectionMade(self):
         self.transport.closeStdin()
     def outReceived(self, data):
         self.data = self.data + data
     def errReceived(self, data):
-        self.log( 'Error: {0}'.format(data))
+        self.logger.error( 'Error: {0}'.format(data))
     def inConnectionLost(self):
         pass
     def outConnectionLost(self):
-        self.log(  'stdout lost: {0}'.format(self.data))
+        self.logger.debug(  'stdout lost: {0}'.format(self.data))
     def errConnectionLost(self):
-        self.log(  'stderr lost.')
+        self.logger.debug(  'stderr lost.')
     def processExited(self, reason):
         global processes
         processes.remove(self.name)
-        self.log(  "Process {0} exited with status {1}".format(self.name, reason.value.exitCode))
+        if reason.value.exitCode != 0:
+            self.logger.error(  "Process {0} exited with status {1}".format(self.name, reason.value.exitCode))
+        else :
+            self.logger.info(  "Process {0} exited.".format(self.name))
     def processEnded(self, reason):
-        self.log(  "Process {0} ended with status {1}".format(self.name, reason.value.exitCode))
-    def log(self, stuff):
-        global adminlog
-        adminlog.write(stuff + '\n')
-        adminlog.flush()
+        if reason.value.exitCode != 0:
+            self.logger.error(  "Process {0} ended with status {1}".format(self.name, reason.value.exitCode))
+        else :
+            self.logger.info(  "Process {0} ended.".format(self.name))
 
 def removeDownloader(result):
     global downloaders
@@ -83,15 +90,10 @@ class ProcessManager():
 
 class DcTorrentAdmin(Resource):
     
-    def log(self, stuff):
-        global adminlog
-        adminlog.write(stuff + '\n')
-        adminlog.flush()
-
     def render_GET(self, request):
-        global trackerPort, downloaders, processes
+        global trackerPort, downloaders, processes, logger
         
-        self.log(request.uri)
+        logger.info(request.uri)
 
         verb = request.args['action'][0]
         if verb=='track':
@@ -99,7 +101,7 @@ class DcTorrentAdmin(Resource):
                 return 'Tracker is already up on {0}'.format(trackerPort)
 
             port = request.args['port'][0]
-            params = ['--port', port, '--dfile', 'dstate', '--logfile', defaultDirs['log'] + 'tracker.log']
+            params = ['--port', port, '--dfile', 'dstate']
             pp = MyPP('tracker')
             program = [defaultDirs['python'] + "python.exe", "dcTorrent.py", "start", "track"]
             args = program + params
@@ -120,7 +122,8 @@ class DcTorrentAdmin(Resource):
             components = os.path.normpath(parts.path).split(os.sep)
             torrentName = components[len(components)-1]
             filename = torrentName[:torrentName.find('.torrent')]
-            params = [verb, '--url', torrent, '--saveas', defaultDirs[verb] + filename, '--ip', request.host.host, '--logfile', '{0}{1}.log'.format(defaultDirs['log'], verb)]
+            #params = [verb, '--url', torrent, '--saveas', defaultDirs[verb] + filename, '--ip', request.host.host, '--logfile', '{0}{1}.log'.format(defaultDirs['log'], verb)]
+            params = [verb, '--url', torrent, '--saveas', defaultDirs[verb] + filename, '--ip', request.host.host]
             #if verb == 'seed':
             #    params += ['--super_seeder', '1']
             program = [defaultDirs['python'] + "python.exe", "dcTorrent.py", "start"]
@@ -166,14 +169,10 @@ class DcTorrentAdmin(Resource):
             return '{0} is stopped.'.format(role)
         elif verb=='clean':
             try:
-                if os.path.exists(defaultDirs['log'] + 'stat.log'):
-                    os.remove(defaultDirs['log'] + 'stat.log')
-                if os.path.exists(defaultDirs['log'] + 'download.log'):
-                    os.remove(defaultDirs['log'] + 'download.log')
                 if os.path.exists(defaultDirs['download']):
                     shutil.rmtree(defaultDirs['download'])
             except:
-                self.log(str(sys.exc_info()[0]))
+                logger.exception(str(sys.exc_info()[0]))
             return 'downloads are cleaned.'
         else:
             return 'Invalid parameter.'
@@ -192,10 +191,16 @@ class Dispatcher(Resource):
             return NotFound()
 
 tracker = TrackerServer(trackerAnnouceCallback)
+
 if not os.path.exists(defaultDirs['log']):
     os.makedirs(defaultDirs['log'])
-adminlog = open(defaultDirs['log'] + 'admin.log', 'a')
+
+#adminlog = open(defaultDirs['log'] + 'admin.log', 'a')
+
 downloaders = dict()
+
+logging.config.fileConfig('logging.conf')
+logger = logging.getLogger('admin')
 
 processes = ProcessManager()
 trackerPort = 0

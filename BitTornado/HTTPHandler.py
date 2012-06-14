@@ -1,6 +1,7 @@
 # Written by Bram Cohen
 # see LICENSE.txt for license information
 
+import logging
 from cStringIO import StringIO
 import sys
 import time
@@ -135,6 +136,7 @@ class HTTPHandler:
         self.getfunc = getfunc
         self.minflush = minflush
         self.lastflush = clock()
+        self.logger = logging.getLogger('track')
 
     def external_connection_made(self, connection):
         self.connections[connection] = HTTPConnection(self, connection)
@@ -158,9 +160,9 @@ class HTTPHandler:
     def log(self, ip, ident, username, header,
             responsecode, length, referrer, useragent):
         year, month, day, hour, minute, second, a, b, c = time.localtime(time.time())
-        print '%s %s %s [%02d/%3s/%04d:%02d:%02d:%02d] "%s" %i %i "%s" "%s"' % (
+        self.logger.info( '%s %s %s [%02d/%3s/%04d:%02d:%02d:%02d] "%s" %i %i "%s" "%s"' % (
             ip, ident, username, day, months[month], year, hour,
-            minute, second, header, responsecode, length, referrer, useragent)
+            minute, second, header, responsecode, length, referrer, useragent))
         t = clock()
         if t - self.lastflush > self.minflush:
             self.lastflush = t
