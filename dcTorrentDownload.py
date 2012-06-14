@@ -89,7 +89,7 @@ class HeadlessDownloader:
         self.display()
         self.logger.info('download {0} complete, down {1:.1f} kB/s, up {2:.1f} kB/s'.format(self.downloadTo, self.averageDownSpeed / (1<<10), self.averageUpSpeed /(1<<10)))
         if self.isDownloader == True:
-            t = Timer(30.0, self.shutdown)
+            t = Timer(adjustDownloader['seed_after_finish'], self.shutdown)
             t.start()
 
     def failed(self):

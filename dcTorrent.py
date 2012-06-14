@@ -6,7 +6,6 @@ from BitTornado.parseargs import parseargs
 from dcTorrentDownload import HeadlessDownloader
 from dcTorrentDefaults import defaultDirs
 from time import time, gmtime, strftime
-import logging.config
 
 def makeTorrent(argv):
     if len(argv) < 2:
@@ -64,12 +63,15 @@ def trackerAnnouceCallback(infohash, ip):
 
 if __name__ == '__main__':
     
+    import cProfile, pstats, logging.config
+
+    profiling = True
     logging.config.fileConfig('logging.conf')
 
     argv = sys.argv
 
     if len(argv) == 1:
-        testSeed(argv);
+        testDownload(argv);
 
     if len(argv) == 1:
         print '%s start tracker/seed/peer' % argv[0]
@@ -85,12 +87,21 @@ if __name__ == '__main__':
         target = argv[2]
         if target == 'track':
             t = TrackerServer(trackerAnnouceCallback)
-            t.track(argv[3:])            
+            t.track(argv[3:])
         elif target == 'torrent':
             makeTorrent(argv[3:])
         elif target == 'seed' or target == 'download':
             h = HeadlessDownloader()
-            h.download(argv[2:])
+            if profiling:
+                cProfile.run('h.download(argv[2:])', '{0}.profile'.format(target))
+                p = pstats.Stats('{0}.profile'.format(target))
+                statslog = open('{0}.stat'.format(target),'w')
+                normalstdout = sys.stdout
+                sys.stdout = statslog
+                p.strip_dirs().sort_stats('time').print_stats()
+                sys.stdout = normalstdout
+            else:
+                h.download(argv[2:])
         else :
             print ' wrong arguments'
             sys.exit(2) # common exit code for syntax error
