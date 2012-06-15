@@ -74,7 +74,7 @@ class Connection:
         if self.locally_initiated:
             incompletecounter.increment()
         if self.locally_initiated or ext_handshake:
-            self.logger.debug('send handshake to {0}'.format(self.connection.get_ip(), self.connection.get_peer_port()))
+            self.logger.debug('send handshake to {0}:{1}'.format(self.connection.get_ip(), self.connection.get_peer_port()))
             self.connection.write(chr(len(protocol_name)) + protocol_name + 
                 option_pattern + self.Encoder.download_id)
         if ext_handshake:
@@ -105,12 +105,13 @@ class Connection:
         return self.connection.is_flushed()
 
     def read_header_len(self, s):
-        self.logger.debug('Handshake receives: {0}'.format(s[1:68]))
+        self.logger.debug('Handshake receives: {0}'.format(s))
         if ord(s) != len(protocol_name):
             return None
         return len(protocol_name), self.read_header
 
     def read_header(self, s):
+        self.logger.debug('Handshake receives: {0}'.format(s))
         if s != protocol_name:
             return None
         return 8, self.read_reserved
@@ -119,15 +120,18 @@ class Connection:
         return 20, self.read_download_id
 
     def read_download_id(self, s):
+        self.logger.debug('Handshake receives: {0}'.format(s))
         if s != self.Encoder.download_id:
             return None
         if not self.locally_initiated:
+            self.logger.debug('Handshake replies.')
             self.Encoder.connecter.external_connection_made += 1
             self.connection.write(chr(len(protocol_name)) + protocol_name + 
                 option_pattern + self.Encoder.download_id + self.Encoder.my_id)
         return 20, self.read_peer_id
 
     def read_peer_id(self, s):
+        self.logger.debug('Handshake receives: {0}'.format(s))
         if not self.id:
             self.id = s
             self.readable_id = make_readable(s)
@@ -303,10 +307,13 @@ class Encoder:
         ip = connection.get_ip(True)
         if self.config['security'] and self.banned.has_key(ip):
             return False
+        sameid_count = 0
         for v in self.connections.values():
             if connection is not v:
                 if connection.id == v.id:
-                    return False
+                    sameid_count += 1
+                    if sameid_count == 1:
+                        return False
                 if self.config['security'] and ip != 'unknown' and ip == v.get_ip(True):
                     v.close()
         return True

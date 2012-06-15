@@ -22,7 +22,7 @@ adjustDownloader = {
                     'timeout_check_interval': 60.0,
                     'max_slice_length': 2 ** 30, #2 ** 17,
                     'upnp_nat_access': 0, #1,
-                    'rerequest_interval': 15, #5 * 60,
+                    'rerequest_interval': 5, #5 * 60,
                     'http_timeout': 60, 
                     'max_upload_rate': 0,
                     'max_download_rate': 0,
