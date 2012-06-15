@@ -2,6 +2,7 @@
 # modified for multitracker operation by John Hoffman
 # see LICENSE.txt for license information
 
+import logging
 from BitTornado.zurllib import urlopen, quote
 from urlparse import urlparse, urlunparse
 from socket import gethostbyname
@@ -103,6 +104,7 @@ class Rerequester:
         self.lock = SuccessLock()
         self.special = None
         self.stopped = False
+        self.logger = logging.getLogger('{0}.{1}'.format(__name__, self.__class__.__name__))
 
     def start(self):
         self.sched(self.c, self.interval/2)
@@ -356,6 +358,7 @@ class Rerequester:
             self.seededfunc()
         elif peers:
             shuffle(peers)
+            self.logger.debug('Peers: ' + ' '.join([ dns[0]+':'+str(dns[1]) for (dns, id) in peers]))
             self.connect(peers)
         callback()
 
