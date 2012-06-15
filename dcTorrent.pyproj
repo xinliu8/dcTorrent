@@ -27,8 +27,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Content Include="LICENSE.txt" />
-    <Content Include="logging2.conf" />
-    <Content Include="logging1.conf" />
     <Content Include="logging.conf" />
   </ItemGroup>
   <ItemGroup>
@@ -87,6 +85,7 @@
     <Compile Include="dcTorrentAdmin.py" />
     <Compile Include="dcTorrent.py" />
     <Compile Include="dcTorrentDownload.py" />
+    <Compile Include="dcTorrentLogging.py" />
     <Compile Include="dcTorrentTrackerService.py" />
   </ItemGroup>
   <ItemGroup>
