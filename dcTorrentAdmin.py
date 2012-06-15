@@ -1,10 +1,13 @@
-import logging.config
+import logging
+import dcTorrentLogging
+
+import pstats
 
 from BitTornado.BT1.track import TrackerServer
 from BitTornado.BT1.makemetafile import make_meta_file, defaults
 from BitTornado.parseargs import parseargs
 from dcTorrentDownload import HeadlessDownloader
-from dcTorrentDefaults import defaultDirs
+from dcTorrentDefaults import defaultDirs, defaultSettings
 from twisted.web.resource import Resource
 from twisted.internet import reactor, threads
 from twisted.internet import protocol
@@ -18,6 +21,8 @@ import shutil
 import sys
 from multiprocessing import Lock
 
+def getDownloaderId(action, target):
+    return action + ':' + target
 
 class MyPP(protocol.ProcessProtocol):
     def __init__(self, name):
@@ -38,8 +43,20 @@ class MyPP(protocol.ProcessProtocol):
     def errConnectionLost(self):
         self.logger.debug(  'stderr lost.')
     def processExited(self, reason):
+        import sys
         global processes
         processes.remove(self.name)
+        #action = self.name.split(':')[0]
+        #profile = defaultDirs['profile']+'{0}.profile'.format(action)
+        #stats = defaultDirs['profile']+'{0}.stats'.format(action)
+        #if os.path.exists(profile):
+        #    p = pstats.Stats(profile)
+        #    statslog = open(stats,'a')
+        #    normalstdout = sys.stdout
+        #    sys.stdout = statslog
+        #    p.strip_dirs().sort_stats('time').print_stats()
+        #    sys.stdout = normalstdout
+
         if reason.value.exitCode != 0:
             self.logger.error(  "Process {0} exited with status {1}".format(self.name, reason.value.exitCode))
         else :
@@ -97,16 +114,16 @@ class DcTorrentAdmin(Resource):
 
         verb = request.args['action'][0]
         if verb=='track':
-            if processes.has('tracker'):
+            if processes.has('track'):
                 return 'Tracker is already up on {0}'.format(trackerPort)
 
             port = request.args['port'][0]
             params = ['--port', port, '--dfile', 'dstate']
-            pp = MyPP('tracker')
+            pp = MyPP('track')
             program = [defaultDirs['python'] + "python.exe", "dcTorrent.py", "start", "track"]
             args = program + params
             trackerProcess = reactor.spawnProcess(pp, args[0], args, env = os.environ)
-            processes.add('tracker', trackerProcess)
+            processes.add('track', trackerProcess)
             trackerPort = port
             #d = threads.deferToThread(tracker.track, params)
             # clear the "done" event for the next start
@@ -114,7 +131,7 @@ class DcTorrentAdmin(Resource):
             return 'Tracker is listening on {0}.'.format(port)
         elif verb=='seed' or verb=='download':
             torrent = request.args['torrent'][0]
-            downloaderId = verb + ':' + torrent
+            downloaderId = getDownloaderId(verb, torrent)
             if processes.has(downloaderId):
                 return 'Downloader is already up'.format(downloaderId)
 
@@ -128,7 +145,7 @@ class DcTorrentAdmin(Resource):
             #    params += ['--super_seeder', '1']
             program = [defaultDirs['python'] + "python.exe", "dcTorrent.py", "start"]
             args = program + params
-            pp = MyPP(verb + ':' + torrent)
+            pp = MyPP(downloaderId)
             downloadProcess = reactor.spawnProcess(pp, args[0], args, env = os.environ)
             processes.add(downloaderId, downloadProcess)
             #h = HeadlessDownloader(removeDownloader)
@@ -158,7 +175,7 @@ class DcTorrentAdmin(Resource):
             # set the "done" event, but the role thread will stop sometime later
             if role=='track':
                 #tracker.stop()
-                processes.kill('tracker')
+                processes.kill('track')
             elif role=='seed' or role=='download':
                 torrent = request.args['torrent'][0]
                 downloaderId = role + ':' + torrent
@@ -199,7 +216,9 @@ if not os.path.exists(defaultDirs['log']):
 
 downloaders = dict()
 
-logging.config.fileConfig('logging.conf')
+#logging.config.fileConfig('logging.conf')
+
+dcTorrentLogging.setRootLogger(defaultDirs['log'] + 'admin.log', logging.DEBUG)
 logger = logging.getLogger('admin')
 
 processes = ProcessManager()

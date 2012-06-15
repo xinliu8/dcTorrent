@@ -4,8 +4,9 @@ from BitTornado.BT1.track import TrackerServer, track
 from BitTornado.BT1.makemetafile import make_meta_file, defaults
 from BitTornado.parseargs import parseargs
 from dcTorrentDownload import HeadlessDownloader
-from dcTorrentDefaults import defaultDirs
+from dcTorrentDefaults import defaultDirs, defaultSettings
 from time import time, gmtime, strftime
+import dcTorrentLogging
 
 def makeTorrent(argv):
     if len(argv) < 2:
@@ -63,10 +64,10 @@ def trackerAnnouceCallback(infohash, ip):
 
 if __name__ == '__main__':
     
-    import cProfile, pstats, logging.config
+    import cProfile, logging.config
 
-    profiling = True
-    logging.config.fileConfig('logging.conf')
+    profiling = False
+    #logging.config.fileConfig('logging.conf')
 
     argv = sys.argv
 
@@ -83,25 +84,22 @@ if __name__ == '__main__':
         testDcTorrent(argv);
 
     if len(argv) > 3:
-        verb = argv[1]
-        target = argv[2]
-        if target == 'track':
+        start = argv[1]
+        action = argv[2]
+        if action == 'track':
+            dcTorrentLogging.setRootLogger(defaultDirs['log'] + 'track.log', logging.DEBUG)
             t = TrackerServer(trackerAnnouceCallback)
             t.track(argv[3:])
-        elif target == 'torrent':
+        elif action == 'torrent':
             makeTorrent(argv[3:])
-        elif target == 'seed' or target == 'download':
+        elif action == 'seed' or action == 'download':
+            dcTorrentLogging.setRootLogger(defaultDirs['log'] + '{0}.log'.format(action), logging.DEBUG)
             h = HeadlessDownloader()
             if profiling:
-                cProfile.run('h.download(argv[2:])', '{0}.profile'.format(target))
-                p = pstats.Stats('{0}.profile'.format(target))
-                statslog = open('{0}.stat'.format(target),'w')
-                normalstdout = sys.stdout
-                sys.stdout = statslog
-                p.strip_dirs().sort_stats('time').print_stats()
-                sys.stdout = normalstdout
+                cProfile.run('h.download(argv[2:])', defaultDirs['profile']+'{0}.profile'.format(action))
             else:
                 h.download(argv[2:])
+            sys.exit(0)
         else :
             print ' wrong arguments'
             sys.exit(2) # common exit code for syntax error

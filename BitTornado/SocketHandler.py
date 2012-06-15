@@ -38,7 +38,9 @@ class SingleSocket:
         self.skipped = 0
 #        self.check = StreamCheck()
         try:
-            self.ip = self.socket.getpeername()[0]
+             peer = self.socket.getpeername()
+             self.ip = peer[0]
+             self.peer_port = peer[1]
         except:
             if ip is None:
                 self.ip = 'unknown'
@@ -52,6 +54,14 @@ class SingleSocket:
             except:
                 pass
         return self.ip
+
+    def get_peer_port(self, real=False):
+        if real:
+            try:
+                self.peer_port = self.socket.getpeername()[1]
+            except:
+                pass
+        return self.peer_port
         
     def close(self):
         '''

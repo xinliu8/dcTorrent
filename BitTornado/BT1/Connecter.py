@@ -4,7 +4,7 @@
 from BitTornado.bitfield import Bitfield
 from BitTornado.clock import clock
 from binascii import b2a_hex
-
+import logging
 try:
     True
 except:
@@ -169,9 +169,6 @@ class Connection:
             self.connecter.ratelimiter.ping(clock() - self.just_unchoked)
             self.just_unchoked = 0
     
-
-
-
 class Connecter:
     def __init__(self, make_upload, downloader, choker, numpieces,
             totalup, config, ratelimiter, sched = None):
@@ -187,6 +184,7 @@ class Connecter:
         self.rate_capped = False
         self.connections = {}
         self.external_connection_made = 0
+        self.logger = logging.getLogger(self.__class__.__name__)
 
     def how_many_connections(self):
         return len(self.connections)
@@ -197,6 +195,7 @@ class Connecter:
         c.upload = self.make_upload(c, self.ratelimiter, self.totalup)
         c.download = self.downloader.make_download(c)
         self.choker.connection_made(c)
+        self.logger.debug('New app level connection (passed handshake): {0}:{1}'.format(connection.get_ip(), connection.get_peer_port()))
         return c
 
     def connection_lost(self, connection):
@@ -227,6 +226,9 @@ class Connecter:
                 len(message) != 1):
             connection.close()
             return
+
+        self.logger.debug(self.print_message(message))
+
         if t == CHOKE:
             c.download.got_choke()
         elif t == UNCHOKE:
@@ -286,3 +288,44 @@ class Connecter:
                 self.got_piece(i)
         else:
             connection.close()
+
+    def print_message(self, message):
+        t = message[0]
+        output = ''
+        if t == CHOKE:
+            output += 'CHOKE'
+        elif t == UNCHOKE:
+            output += 'UNCHOKE'
+        elif t == INTERESTED:
+            output += 'INTERESTED'
+        elif t == NOT_INTERESTED:
+            output += 'NOT_INTERESTED'
+        elif t == HAVE:
+            i = toint(message[1:])
+            output += 'HAVE:{0}'.format(i)
+        elif t == BITFIELD:
+            try:
+                b = Bitfield(self.numpieces, message[1:])
+                output += 'BITFIELD:{0}'.format(' '.join([ str(ord(ch)) for ch in b.tostring()]))
+            except ValueError:
+                output += 'BITFIELD:ValueError'
+                return output
+        elif t == REQUEST:
+            index = toint(message[1:5])
+            begin = toint(message[5:9]) 
+            length = toint(message[9:])
+            output += 'REQUEST:i:{0} b:{1} l:{2}'.format(index, begin, length)
+        elif t == CANCEL:
+            index = toint(message[1:5])
+            begin = toint(message[5:9]) 
+            length = toint(message[9:])
+            output += 'CANCEL:i:{0} b:{1} l:{2}'.format(index, begin, length)
+        elif t == PIECE:
+            index = toint(message[1:5])
+            begin = toint(message[5:9])
+            length = len(message) - 8
+            output += 'PIECE:i:{0} b:{1} l:{2}'.format(index, begin, length)
+        else:
+            output += 'Wrong Message'
+
+        return output

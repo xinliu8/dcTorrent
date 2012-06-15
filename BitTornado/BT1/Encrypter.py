@@ -1,6 +1,6 @@
 # Written by Bram Cohen
 # see LICENSE.txt for license information
-
+import logging
 from cStringIO import StringIO
 from binascii import b2a_hex
 from socket import error as socketerror
@@ -70,9 +70,11 @@ class Connection:
         self.keepalive = lambda: None
         self.closed = False
         self.buffer = StringIO()
+        self.logger = logging.getLogger('{0}.{1}'.format(__name__, self.__class__.__name__))
         if self.locally_initiated:
             incompletecounter.increment()
         if self.locally_initiated or ext_handshake:
+            self.logger.debug('send handshake to {0}'.format(self.connection.get_ip(), self.connection.get_peer_port()))
             self.connection.write(chr(len(protocol_name)) + protocol_name + 
                 option_pattern + self.Encoder.download_id)
         if ext_handshake:
@@ -82,9 +84,13 @@ class Connection:
         else:
             self.next_len, self.next_func = 1, self.read_header_len
         self.Encoder.raw_server.add_task(self._auto_close, 15)
+        
 
     def get_ip(self, real=False):
         return self.connection.get_ip(real)
+
+    def get_peer_port(self, real=False):
+        return self.connection.get_peer_port(real)
 
     def get_id(self):
         return self.id
@@ -99,6 +105,7 @@ class Connection:
         return self.connection.is_flushed()
 
     def read_header_len(self, s):
+        self.logger.debug('Handshake receives: {0}'.format(s[1:68]))
         if ord(s) != len(protocol_name):
             return None
         return len(protocol_name), self.read_header
@@ -227,6 +234,7 @@ class Encoder:
         else:
             self.max_connections = self.config['max_connections']
         schedulefunc(self.send_keepalives, keepalive_delay)
+        self.logger = logging.getLogger('{0}.{1}'.format(__name__, self.__class__.__name__))
 
     def send_keepalives(self):
         self.schedulefunc(self.send_keepalives, self.keepalive_delay)
@@ -272,10 +280,12 @@ class Encoder:
             if self.config['security'] and ip != 'unknown' and ip == dns[0]:
                 return True
         try:
+            self.logger.debug('Start new socket connection to {0}:{1}'.format(dns[0], dns[1]))
             c = self.raw_server.start_connection(dns)
             con = Connection(self, c, id)
             self.connections[c] = con
             c.set_handler(con)
+             
         except socketerror:
             return False
         return True

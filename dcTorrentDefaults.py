@@ -3,6 +3,7 @@ defaultDirs = {
                'download':'..\\downloaded\\', 
                'torrent':'..\\data\\', 
                'log':'..\\logs\\',
+               'profile': '..\\logs\\',
                'python': 'C:\\Python27\\'
                # change this before deploy
                #'python': 'd:\\Users\\rd\\Python27\\'
@@ -10,7 +11,7 @@ defaultDirs = {
 
 defaultSettings = { 
                'adminPort':'5678',
-               'trackerPort':'6969'
+               'trackerPort':'6969',
               }
 
 adjustDownloader = {
@@ -35,6 +36,7 @@ adjustDownloader = {
                     'auto_kick': 0, #1,
                     'double_check': 0, #1,
                     'lock_files': 0, #1,
+                    'auto_flush': 1, #0,
                     'spew': 1,
                     'max_initiate': 40, #40,
                     'max_uploads': 7, #7
