@@ -140,7 +140,7 @@ def touchStatLog():
     statfile.close()
 
 if __name__ == '__main__':
-    localhostScenario()
+    localVMScenario()
 
     if len(sys.argv)==1:
         touchStatLog()

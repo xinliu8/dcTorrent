@@ -132,8 +132,9 @@ class DcTorrentAdmin(Resource):
         elif verb=='seed' or verb=='download':
             torrent = request.args['torrent'][0]
             downloaderId = getDownloaderId(verb, torrent)
-            if processes.has(downloaderId):
-                return 'Downloader is already up'.format(downloaderId)
+            # disallow multiple downloaders on one machine
+            #if processes.has(downloaderId):
+            #    return 'Downloader is already up'.format(downloaderId)
 
             parts = urlparse(torrent)
             components = os.path.normpath(parts.path).split(os.sep)
