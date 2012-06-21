@@ -61,6 +61,6 @@ resetPeerIDs()
 def createPeerID(ins = '---'):
     assert type(ins) is StringType
     assert len(ins) == 3
-    # change random value in each thread
-    resetPeerIDs()
+    # change random value in each thread, should use ins to differentiate
+    # resetPeerIDs()
     return _idprefix + ins + _idrandom[0]

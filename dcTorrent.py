@@ -4,6 +4,7 @@ from BitTornado.BT1.track import TrackerServer, track
 from BitTornado.BT1.makemetafile import make_meta_file, defaults
 from BitTornado.parseargs import parseargs
 from dcTorrentDownload import HeadlessDownloader
+from dcTorrentDownloadMany import HeadlessDownloadMany
 from dcTorrentDefaults import defaultDirs, defaultSettings
 from time import time, gmtime, strftime
 import dcTorrentLogging
@@ -100,6 +101,10 @@ if __name__ == '__main__':
             else:
                 h.download(argv[2:])
             sys.exit(0)
+        elif action == 'seedmany' or action == 'downloadmany':
+            dcTorrentLogging.setRootLogger(defaultDirs['log'] + '{0}.log'.format(action), logging.DEBUG)
+            h = HeadlessDownloadMany()
+            h.download(argv[2:])
         else :
             print ' wrong arguments'
             sys.exit(2) # common exit code for syntax error

@@ -1,9 +1,14 @@
+workDir = 'e:\\Code\\Python\\dcTorrent\\'
+
 defaultDirs = { 
-               'seed':'..\\data\\', 
-               'download':'..\\downloaded\\', 
-               'torrent':'..\\data\\', 
-               'log':'..\\logs\\',
-               'profile': '..\\logs\\',
+               'seed':workDir + '..\\data\\', 
+               'download':workDir + '..\\downloaded\\', 
+               'seedmany':workDir + '..\\data\\', 
+               'downloadmany':workDir + '..\\downloaded\\', 
+               'torrent':workDir + '..\\data\\', 
+               'log':workDir + '..\\logs\\',
+               'profile': workDir + '..\\logs\\',
+               'dist': workDir + 'dist\\agent\\',
                'python': 'C:\\Python27\\'
                # change this before deploy
                #'python': 'd:\\Users\\rd\\Python27\\'

@@ -204,15 +204,6 @@ class HeadlessDownloader:
             elif config['responsefile']:
                 self.torrent = config['responsefile']
 
-            '''
-            if (config['logfile']) and (config['logfile'] != '-'):
-                try:
-                    self.logger.infofile = open(config['logfile'],'a')
-                    self.logger.info( "# Log Started: " + isotime())
-                except:
-                    print "warning: could not open log file."
-            '''
-
             for k in adjustDownloader:
                 config[k] = adjustDownloader[k]
 

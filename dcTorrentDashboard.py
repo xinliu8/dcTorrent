@@ -1,8 +1,8 @@
 import sys
 import httplib
 from time import strftime, gmtime, time, sleep
-from dcTorrentDefaults import defaultSettings
-import socket
+from dcTorrentDefaults import defaultSettings, defaultDirs
+import socket, os
 
 tracker = ''
 seeders = []
@@ -20,6 +20,16 @@ def stopSeed(ip, torrent):
     site = ip + ':' + adminPort
     httpGet(site, request)
 
+def startSeedMany(ip, torrentDir):
+    request = '/admin?action=seedmany&torrentdir={0}'.format(torrentDir)
+    site = ip + ':' + adminPort
+    httpGet(site, request)
+
+def stopSeedMany(ip, torrentDir):
+    request = '/admin?action=stop&role=seedmany&torrentdir={0}'.format(torrentDir)
+    site = ip + ':' + adminPort
+    httpGet(site, request)
+
 def startDownload(ip, torrent):
     request = '/admin?action=download&torrent={0}'.format(torrent)
     site = ip + ':' + adminPort
@@ -27,6 +37,16 @@ def startDownload(ip, torrent):
 
 def stopDownload(ip, torrent):
     request = '/admin?action=stop&role=download&torrent={0}'.format(torrent)
+    site = ip + ':' + adminPort
+    httpGet(site, request)
+
+def startDownloadMany(ip, torrentDir):
+    request = '/admin?action=downloadmany&torrentdir={0}'.format(torrentDir)
+    site = ip + ':' + adminPort
+    httpGet(site, request)
+
+def stopDownloadMany(ip, torrentDir):
+    request = '/admin?action=stop&role=downloadmany&torrentdir={0}'.format(torrentDir)
     site = ip + ':' + adminPort
     httpGet(site, request)
 
@@ -110,6 +130,24 @@ def startAll():
     for downloader in downloaders:
         startDownload(downloader, torrentUri)
 
+def startAllInDir():
+    global tracker, seeders, downloaders
+    startTrack(tracker)
+    while True:
+        sleep(0.2)
+        if isTrackerUp(tracker) == True:
+            break;
+
+    for f in os.listdir(defaultDirs['seed']):
+        if not f.endswith('.torrent'):
+            makeTorrent(tracker, f)
+
+    torrentDir = defaultDirs['torrent']
+    for seeder in seeders:
+        startSeedMany(seeder, torrentDir)
+    for downloader in downloaders:
+        startDownloadMany(downloader, torrentDir)
+
 def startDownloads():
     global tracker, seeders, downloaders, filename
     torrentUri = "http://{0}:{1}/files/{2}.torrent".format(tracker, adminPort, filename)
@@ -125,8 +163,17 @@ def stopAll():
     for downloader in downloaders:
         stopDownload(downloader, torrentUri)
 
+def stopAllInDir():
+    global tracker, seeders, downloaders
+    stopTrack(tracker)
+    torrentDir = defaultDirs['torrent']
+    for seeder in seeders:
+        stopSeedMany(seeder, torrentDir)
+    for downloader in downloaders:
+        stopDownloadMany(downloader, torrentDir)
+
 def cleanAll():
-    global tracker, seeders, downloaders, filename
+    global tracker, seeders, downloaders
     cleanHistory(tracker)
     for seeder in seeders:
         cleanHistory(seeder)
@@ -140,7 +187,7 @@ def touchStatLog():
     statfile.close()
 
 if __name__ == '__main__':
-    localVMScenario()
+    localhostScenario()
 
     if len(sys.argv)==1:
         touchStatLog()
@@ -149,12 +196,14 @@ if __name__ == '__main__':
 
     if sys.argv[1]=='start':
         touchStatLog()
-        startAll()
+        #startAll()
+        startAllInDir()
     elif sys.argv[1]=='startdl':
         touchStatLog()
         startDownloads()
     elif sys.argv[1]=='stop':
-        stopAll()
+        #stopAll()
+        stopAllInDir()
     elif sys.argv[1]=='clean':
         cleanAll()
 
