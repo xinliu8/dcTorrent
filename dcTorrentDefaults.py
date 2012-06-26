@@ -1,14 +1,16 @@
-workDir = 'e:\\Code\\Python\\dcTorrent\\'
+import os
+#workDir = 'e:\\Code\\Python\\dcTorrent\\'
+workDir = os.getcwd()
 
 defaultDirs = { 
-               'seed':workDir + '..\\data\\', 
-               'download':workDir + '..\\downloaded\\', 
-               'seedmany':workDir + '..\\data\\', 
-               'downloadmany':workDir + '..\\downloaded\\', 
-               'torrent':workDir + '..\\data\\', 
-               'log':workDir + '..\\logs\\',
-               'profile': workDir + '..\\logs\\',
-               'dist': workDir + 'dist\\agent\\',
+               'seed': os.path.join(workDir, 'data'), 
+               'download': os.path.join(workDir, 'downloaded'), 
+               'seedmany': os.path.join(workDir, 'data'), 
+               'downloadmany': os.path.join(workDir, 'downloaded'), 
+               'torrent': os.path.join(workDir, 'data'), 
+               'log': os.path.join(workDir, 'logs'),
+               'profile': os.path.join(workDir, 'logs'),
+               'dist': workDir,
                'python': 'C:\\Python27\\'
                # change this before deploy
                #'python': 'd:\\Users\\rd\\Python27\\'
@@ -21,6 +23,7 @@ defaultSettings = {
 
 adjustDownloader = {
                     'download_slice_size': 2 ** 14, #2 ** 14,
+                    'upload_unit_size': 1460,
                     'minport': 56969, #10000
                     'maxport': 56979, #60000
                     'timeout': 300.0,

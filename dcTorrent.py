@@ -8,6 +8,8 @@ from dcTorrentDownloadMany import HeadlessDownloadMany
 from dcTorrentDefaults import defaultDirs, defaultSettings
 from time import time, gmtime, strftime
 import dcTorrentLogging
+import cProfile, logging.config, socket
+import os
 
 def makeTorrent(argv):
     if len(argv) < 2:
@@ -22,6 +24,15 @@ def makeTorrent(argv):
     except ValueError, e:
         print 'error: ' + str(e)
         print 'run with no args for parameter explanations'
+
+def makeTorrent(source_dir, host, port):
+    for source in os.listdir(source_dir):
+        if not source.endswith('.torrent'):
+            filepath = os.path.join(source_dir, source)
+            target = filepath + '.torrent'
+            trackerUri = 'http://{0}:{1}/announce'.format(host, port)
+            params = [trackerUri, filepath, '--target', target]
+            makeTorrent(params)
 
 def testSeed(argv):
     argv += ['start', 'seed'];
@@ -65,8 +76,6 @@ def trackerAnnouceCallback(infohash, ip):
 
 if __name__ == '__main__':
     
-    import cProfile, logging.config
-
     profiling = False
     #logging.config.fileConfig('logging.conf')
 
@@ -88,21 +97,25 @@ if __name__ == '__main__':
         start = argv[1]
         action = argv[2]
         if action == 'track':
-            dcTorrentLogging.setRootLogger(defaultDirs['log'] + 'track.log', logging.DEBUG)
+            dcTorrentLogging.setRootLogger(os.path.join(defaultDirs['log'], 'track.log'), logging.DEBUG)
             t = TrackerServer(trackerAnnouceCallback)
             t.track(argv[3:])
         elif action == 'torrent':
             makeTorrent(argv[3:])
+        elif action == 'torrents':
+            # dir, tracker port
+            host = socket.gethostbyname(socket.gethostname())
+            makeTorrents(argv[3], host, defaultSettings['trackerPort'])
         elif action == 'seed' or action == 'download':
-            dcTorrentLogging.setRootLogger(defaultDirs['log'] + '{0}.log'.format(action), logging.DEBUG)
+            dcTorrentLogging.setRootLogger(os.path.join(defaultDirs['log'], '{0}.log'.format(action)), logging.DEBUG)
             h = HeadlessDownloader()
             if profiling:
-                cProfile.run('h.download(argv[2:])', defaultDirs['profile']+'{0}.profile'.format(action))
+                cProfile.run('h.download(argv[2:])', os.path.join(defaultDirs['profile'], '{0}.profile'.format(action)))
             else:
                 h.download(argv[2:])
             sys.exit(0)
         elif action == 'seedmany' or action == 'downloadmany':
-            dcTorrentLogging.setRootLogger(defaultDirs['log'] + '{0}.log'.format(action), logging.DEBUG)
+            dcTorrentLogging.setRootLogger(os.path.join(defaultDirs['log'], '{0}.log'.format(action)), logging.DEBUG)
             h = HeadlessDownloadMany()
             h.download(argv[2:])
         else :

@@ -81,10 +81,11 @@
     <Compile Include="BitTornado\zurllib.py" />
     <Compile Include="BitTornado\__init__.py" />
     <Compile Include="dcTorrentDefaults.py" />
-    <Compile Include="dcTorrentClient.py" />
+    <Compile Include="dcTorrentDashboard.py" />
     <Compile Include="dcTorrentAdmin.py" />
     <Compile Include="dcTorrent.py" />
     <Compile Include="dcTorrentDownload.py" />
+    <Compile Include="dcTorrentDownloadMany.py" />
     <Compile Include="dcTorrentLogging.py" />
     <Compile Include="dcTorrentTrackerService.py" />
   </ItemGroup>
