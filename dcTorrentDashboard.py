@@ -124,7 +124,7 @@ def isTrackerUp(tracker):
     except:
         return False
 
-def startController():
+def startController(seed_abs_dir):
     global trackers, seeders, downloaders
     for tracker in trackers:
         startTrack(tracker)
@@ -144,10 +144,10 @@ def startController():
         return;
 
     # only one generate torrents
-    makeTorrents(trackers[:1], 'seed')
+    makeTorrents(trackers[:1], seed_abs_dir)
 
     for seeder in seeders:
-        startSeedMany(seeder, 'seed')
+        startSeedMany(seeder, seed_abs_dir)
 
 def startAllSingleFile():
     global trackers, seeders, downloaders, filename
@@ -164,7 +164,7 @@ def startAllSingleFile():
     if retry==maxRetry:
         return;
 
-    makeTorrent(tracker, filename)
+    makeTorrent(tracker, os.path.join(defaultDirs['seed'], filename))
     torrentUri = "http://{0}:{1}/files/{2}.torrent".format(tracker, adminPort, filename)
     for seeder in seeders:
         startSeed(seeder, torrentUri)
@@ -204,18 +204,18 @@ def cleanAll():
     for tracker in trackers:
         cleanHistory(tracker, 'track')
     for seeder in seeders:
-        cleanHistory(seeder, 'seed')
+        cleanHistory(seeder, 'seedmany')
     for downloader in downloaders:
         cleanHistory(downloader, 'download')
 
 def touchStatLog():
-    statfile = open('logs\\stat.log', 'a')
+    statfile = open(os.path.join(defaultDirs['log'], 'stat.log'), 'a')
     timestr = strftime('%Y-%m-%d %H:%M:%S UTC', gmtime(time()))
     statfile.write('Job starts at {0}\n'.format(timestr))
     statfile.close()
 
 if __name__ == '__main__':
-    localVMScenario()
+    localhostScenario()
 
     if len(sys.argv)==1:
         touchStatLog()
@@ -223,7 +223,10 @@ if __name__ == '__main__':
         sys.exit(0)
 
     if sys.argv[1]=='startc':
-        startController()
+        if len(sys.argv) > 2:
+            startController(sys.argv[2])
+        else:
+            startController()
     elif sys.argv[1]=='startd':
         touchStatLog()
         startDownloads(sys.argv[2])

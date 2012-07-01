@@ -11,28 +11,26 @@ import dcTorrentLogging
 import cProfile, logging.config, socket
 import os
 
-def makeTorrent(argv):
-    if len(argv) < 2:
-        print 'Usage: ' + ' <trackerurl> <file> [file...] [params...]'
-        print
-        sys.exit(2)
+def make_torrent(filename, dir, trackers):
+    source = os.path.join(dir, filename)
+    target = os.path.join(dir, filename + '.torrent')
+    trackerUris = ['http://{0}:{1}/announce'.format(tracker, defaultSettings['trackerPort']) for tracker in trackers]
+    params = [trackerUris[0], source, '--target', target]
+    if len(trackerUris) > 1:
+        params += ['--announce_list', ','.join(trackerUris[1:])]
 
     try:
-        config, args = parseargs(argv, defaults, 2, None)
+        config, args = parseargs(params, defaults, 2, None)
         for file in args[1:]:
             make_meta_file(file, args[0], config)
     except ValueError, e:
         print 'error: ' + str(e)
         print 'run with no args for parameter explanations'
 
-def makeTorrent(source_dir, host, port):
-    for source in os.listdir(source_dir):
-        if not source.endswith('.torrent'):
-            filepath = os.path.join(source_dir, source)
-            target = filepath + '.torrent'
-            trackerUri = 'http://{0}:{1}/announce'.format(host, port)
-            params = [trackerUri, filepath, '--target', target]
-            makeTorrent(params)
+def make_torrents(dir, trackers):
+    for f in os.listdir(dir):
+        if not f.endswith('.torrent'):
+            make_torrent(f, dir, trackers)
 
 def testSeed(argv):
     argv += ['start', 'seed'];
@@ -52,6 +50,10 @@ def testMakeTorrent(argv):
     argv += ['make', 'torrent'];
     argv += ['http://127.0.0.1:6969/announce', '..\data\gparted.iso', '--target', '..\data\gparted.iso.torrent'];
 
+def testMakeTorrents(argv):
+    argv += ['make', 'torrents'];
+    argv += [defaultDirs['seed']];
+
 def testDcTorrent(argv):
     target = argv[2]
     argv.remove('test')
@@ -68,7 +70,7 @@ def testDcTorrent(argv):
         print "Wrong test!"
 
 def trackerAnnouceCallback(infohash, ip):
-    statfile = open(defaultDirs['log'] + 'stat.log', 'a')
+    statfile = open(os.path.join(defaultDirs['log'], 'stat.log'), 'a')
     timestr = strftime('%Y-%m-%d %H:%M:%S UTC', gmtime(time()))
     readableInfohash = ''.join( [ "%02X" % ord( x ) for x in infohash ] )
     statfile.writelines('{0} finish downloading {1} at {2}\n'.format(ip, readableInfohash, timestr))
@@ -82,7 +84,7 @@ if __name__ == '__main__':
     argv = sys.argv
 
     if len(argv) == 1:
-        testDownload(argv);
+        testMakeTorrents(argv);
 
     if len(argv) == 1:
         print '%s start tracker/seed/peer' % argv[0]
@@ -94,6 +96,8 @@ if __name__ == '__main__':
         testDcTorrent(argv);
 
     if len(argv) > 3:
+        if not os.path.exists(defaultDirs['log']):
+            os.makedirs(defaultDirs['log'])
         start = argv[1]
         action = argv[2]
         if action == 'track':
@@ -101,11 +105,18 @@ if __name__ == '__main__':
             t = TrackerServer(trackerAnnouceCallback)
             t.track(argv[3:])
         elif action == 'torrent':
-            makeTorrent(argv[3:])
+            source = argv[3]
+            filename = os.path.basename(source)
+            dir = os.path.dirname(source)
+            host = socket.gethostbyname(socket.gethostname())
+            trackers = [host]
+            make_torrent(filename, dir, trackers)
         elif action == 'torrents':
             # dir, tracker port
             host = socket.gethostbyname(socket.gethostname())
-            makeTorrents(argv[3], host, defaultSettings['trackerPort'])
+            dir = argv[3]
+            trackers = [host]
+            make_torrents(dir, trackers)
         elif action == 'seed' or action == 'download':
             dcTorrentLogging.setRootLogger(os.path.join(defaultDirs['log'], '{0}.log'.format(action)), logging.DEBUG)
             h = HeadlessDownloader()

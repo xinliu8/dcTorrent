@@ -103,6 +103,9 @@ class ProcessManager():
         self.lock.release()
 
 class DcTorrentAdmin(Resource):
+    def __init__(self):
+        dcTorrentLogging.setRootLogger(os.path.join(defaultDirs['log'], 'admin.log'), logging.DEBUG)
+        self.logger = logging.getLogger('admin')
     def getDownloadId(self, action, target):
         return action + '$' + target
 
@@ -110,14 +113,16 @@ class DcTorrentAdmin(Resource):
         separator = downloadId.find('$')
         return (downloadId[:separator], downloadId[separator+1:])
 
+    def getDcTorrentPath(self):
+        global application_path
+        return os.path.join(application_path, "dcTorrent.exe")
+        
     def track(self, port):
-        if processes.has('track'):
-            return 'Tracker is already up on {0}'.format(trackerPort)
-
+        
         params = ['--port', port, '--dfile', 'dstate']
         pp = MyPP('track')
         #program = [defaultDirs['python'] + "python.exe", "dcTorrent.py", "start", "track"]
-        program = ["dcTorrent.exe", "start", "track"]
+        program = [self.getDcTorrentPath(), "start", "track"]
         args = program + params
         trackerProcess = reactor.spawnProcess(pp, args[0], args, env = os.environ)
         processes.add('track', trackerProcess)
@@ -140,7 +145,7 @@ class DcTorrentAdmin(Resource):
         #if action == 'seed':
         #    params += ['--super_seeder', '1']
         #program = [defaultDirs['python'] + "python.exe", "dcTorrent.py", "start"]
-        program = ["dcTorrent.exe", "start"]
+        program = [self.getDcTorrentPath(), "start"]
         args = program + params
         pp = MyPP(downloadId)
         downloadProcess = reactor.spawnProcess(pp, args[0], args, env = os.environ)
@@ -150,33 +155,34 @@ class DcTorrentAdmin(Resource):
         #d = threads.deferToThread(h.download, params)
         #d.addCallback(h.downloadCallback)
     def download_many(self, downloadId, host):
-        (action, torrent_dir) = self.extractDownloadId(downloadId)
-        params = [action, torrent_dir, '--saveas', defaultDirs[action], '--ip', host]
-        program = ["dcTorrent.exe", "start"]
+        # now only used for seed many
+        (action, dir) = self.extractDownloadId(downloadId)
+        params = [action, dir, '--saveas', dir, '--ip', host]
+        program = [self.getDcTorrentPath(), "start"]
         args = program + params
         pp = MyPP(downloadId)
         downloadProcess = reactor.spawnProcess(pp, args[0], args, env = os.environ)
         processes.add(downloadId, downloadProcess)
-    def make_torrent(self, source, trackers):
-        filename = os.path.join(defaultDirs['seed'], source)
-        target = os.path.join(defaultDirs['torrent'], source + '.torrent')
+    def make_torrent(self, filename, dir, trackers):
+        source = os.path.join(dir, filename)
+        target = os.path.join(dir, filename + '.torrent')
         trackerUris = ['http://{0}:{1}/announce'.format(tracker, defaultSettings['trackerPort']) for tracker in trackers]
-        params = [trackerUris[0], filename, '--target', target]
+        params = [trackerUris[0], source, '--target', target]
         if len(trackerUris) > 1:
             params += ['--announce_list', ','.join(trackerUris[1:])]
         
         config, args = parseargs(params, defaults, 2, None)
         for file in args[1:]:
             make_meta_file(file, args[0], config)
-    def make_torrents(self, trackers, torrent_dir):
-        for f in os.listdir(defaultDirs[torrent_dir]):
+    def make_torrents(self, trackers, dir):
+        for f in os.listdir(dir):
             if not f.endswith('.torrent'):
-                self.make_torrent(f, trackers)
+                self.make_torrent(f, dir, trackers)
 
     def render_GET(self, request):
-        global trackerPort, downloaders, processes, logger
+        global downloaders, processes, root, VIEWS
         
-        logger.info(request.uri)
+        self.logger.info(request.uri)
 
         action = request.args['action'][0]
         if action=='track':
@@ -193,15 +199,19 @@ class DcTorrentAdmin(Resource):
             if not request.args.has_key(param):
                 return 'wrong parameters {0}'.format(param)
 
-            dir = request.args[param][0]
-            downloadId = self.getDownloadId(action, os.path.abspath(defaultDirs[dir]))
+            abs_dir = request.args[param][0]
+            VIEWS['files'] = File(abs_dir)
+            root.putChild('files', File(abs_dir))
+            downloadId = self.getDownloadId(action, abs_dir)
             self.download_many(downloadId, request.host.host)
             return '{0} is up.'.format(downloadId)
         elif action=='maketorrent':
             source = request.args['source'][0]
             trackers = request.args['trackers'][0].split(',')
             try:
-                self.make_torrent(source, trackers)
+                filename = os.path.basename(source)
+                dir = os.path.dirname(source)
+                self.make_torrent(filename, dir, trackers)
                 return 'Make torrent for {0}'.format(source)
             except ValueError, e:
                 return 'error: ' + str(e)
@@ -240,17 +250,17 @@ class DcTorrentAdmin(Resource):
                 return '{0} is stopped.'.format(downloadId)
         elif action=='clean':
             role = request.args['role'][0]
-            if role=='track':
-                return 'track log is cleaned.'
-            elif role=='seed':
-                return 'seed log is cleaned.'
-            elif role == 'download':
+            log = os.path.join(defaultDirs['log'], '{0}.log'.format(role))
+            if os.path.exists(log):
+                os.remove(log)
+            if role == 'download':
                 try:
                     if os.path.exists(defaultDirs['download']):
                         shutil.rmtree(defaultDirs['download'])
                 except:
                     logger.exception(str(sys.exc_info()[0]))
-                return 'downloads are cleaned.'
+            
+            return 'Cleaned {0}.'.format(role)
         else:
             return 'Invalid parameter.'
 
@@ -259,34 +269,41 @@ class NotFound(Resource):
         return "Not Found";
 
 class Dispatcher(Resource):
+    def render_GET(self, request):
+        return 'try these actions: admin, files, etc'
     def getChild(self, action, request):
-        if(action=='admin'):
-            return DcTorrentAdmin()
-        elif(action=='files'):
-            return File(defaultDirs['torrent'])
+        if action == '':
+            return self
         else:
-            return NotFound()
+            if name in VIEWS.keys():
+                return Resource.getChild(self, action, request)
+            else:
+                return NotFound()
 
-tracker = TrackerServer(trackerAnnouceCallback)
 
-if not os.path.exists(defaultDirs['log']):
-    os.makedirs(defaultDirs['log'])
+#tracker = TrackerServer(trackerAnnouceCallback)
 
-#adminlog = open(defaultDirs['log'] + 'admin.log', 'a')
+application_path = ''
+if getattr(sys, 'frozen', False):
+    application_path = os.path.dirname(sys.executable)
+elif __file__:
+    application_path = os.path.dirname(__file__)
 
 downloaders = dict()
-
-#logging.config.fileConfig('logging.conf')
-
-dcTorrentLogging.setRootLogger(os.path.join(defaultDirs['log'], 'admin.log'), logging.DEBUG)
-logger = logging.getLogger('admin')
-
 processes = ProcessManager()
-trackerPort = 0
+
+VIEWS = {
+         'admin': DcTorrentAdmin()
+}
+
+
+if not os.path.exists(defaultDirs['log']):
+        os.makedirs(defaultDirs['log'])
 
 root = Dispatcher()
-factory = Site(root)
-reactor.listenTCP(5678, factory)
-reactor.run()
+for viewName, className in VIEWS.items():
+    root.putChild(viewName, className)
 
-#start(int(sys.argv[1]))
+server = Site(root)
+reactor.listenTCP(5678, server)
+reactor.run()

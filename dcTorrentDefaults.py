@@ -1,13 +1,14 @@
 import os
 #workDir = 'e:\\Code\\Python\\dcTorrent\\'
-workDir = os.getcwd()
+#workDir = os.getcwd()
+workDir = 'C:\\dcTorrentRepository\\'
 
 defaultDirs = { 
                'seed': os.path.join(workDir, 'data'), 
                'download': os.path.join(workDir, 'downloaded'), 
                'seedmany': os.path.join(workDir, 'data'), 
                'downloadmany': os.path.join(workDir, 'downloaded'), 
-               'torrent': os.path.join(workDir, 'data'), 
+               'torrent': os.path.join(workDir, 'torrent'), 
                'log': os.path.join(workDir, 'logs'),
                'profile': os.path.join(workDir, 'logs'),
                'dist': workDir,
@@ -25,7 +26,7 @@ adjustDownloader = {
                     'download_slice_size': 2 ** 14, #2 ** 14,
                     'upload_unit_size': 1460,
                     'minport': 56969, #10000
-                    'maxport': 56979, #60000
+                    'maxport': 56970, #60000
                     'timeout': 300.0,
                     'timeout_check_interval': 60.0,
                     'max_slice_length': 2 ** 30, #2 ** 17,
