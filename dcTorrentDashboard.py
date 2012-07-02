@@ -192,12 +192,12 @@ def stopAllSingleFile():
     for downloader in downloaders:
         stopDownload(downloader, torrentUri)
 
-def stopAll():
+def stopAll(seed_abs_dir):
     global trackers, seeders, downloaders
     for tracker in trackers:
         stopTrack(tracker)
     for seeder in seeders:
-        stopSeedMany(seeder, 'seed')
+        stopSeedMany(seeder, seed_abs_dir)
 
 def cleanAll():
     global trackers, seeders, downloaders
@@ -226,12 +226,15 @@ if __name__ == '__main__':
         if len(sys.argv) > 2:
             startController(sys.argv[2])
         else:
-            startController()
+            startController(defaultDirs['seedmany'])
     elif sys.argv[1]=='startd':
         touchStatLog()
         startDownloads(sys.argv[2])
     elif sys.argv[1]=='stop':
-        stopAll()
+        if len(sys.argv) > 2:
+            stopAll(sys.argv[2])
+        else:
+            stopAll(defaultDirs['seedmany'])
     elif sys.argv[1]=='clean':
         cleanAll()
 

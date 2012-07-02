@@ -18,7 +18,7 @@ def _errfunc(x):
     print ":: "+x
 
 def parsedir(directory, parsed, files, blocked,
-             exts = ['.torrent'], return_metainfo = False, errfunc = _errfunc):
+             exts = ['.torrent'],  recursive_torrents_search = False, return_metainfo = False, errfunc = _errfunc):
     if NOISY:
         errfunc('checking dir')
     dirs_to_check = [directory]
@@ -39,7 +39,9 @@ def parsedir(directory, parsed, files, blocked,
                 p = os.path.join(directory, f)
                 new_files[p] = [(os.path.getmtime(p), os.path.getsize(p)), 0]
                 torrent_type[p] = newtorrent
-        if not newtorrents:
+        # this was semi recursive as search stops at a directory with torrents
+        # need to change track parse_allowed when allow_dir is enabled
+        if not newtorrents or recursive_torrents_search == True:
             for f in os.listdir(directory):
                 p = os.path.join(directory, f)
                 if os.path.isdir(p):

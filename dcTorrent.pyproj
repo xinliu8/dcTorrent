@@ -5,8 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{7c473c76-ca9e-4aa4-81fc-99e032b3a675}</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>
-    </StartupFile>
+    <StartupFile>dcTorrent.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -88,6 +87,7 @@
     <Compile Include="dcTorrentDownloadMany.py" />
     <Compile Include="dcTorrentLogging.py" />
     <Compile Include="dcTorrentTrackerService.py" />
+    <Compile Include="setupDcTorrentAgent.py" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include=".git\" />

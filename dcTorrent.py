@@ -54,6 +54,10 @@ def testMakeTorrents(argv):
     argv += ['make', 'torrents'];
     argv += [defaultDirs['seed']];
 
+def testSeedmany(argv):
+    argv += ['start', 'seedmany'];
+    argv += [defaultDirs['seedmany'], '--saveas', defaultDirs['seedmany'], '--ip', '127.0.0.1'];
+
 def testDcTorrent(argv):
     target = argv[2]
     argv.remove('test')
@@ -84,7 +88,7 @@ if __name__ == '__main__':
     argv = sys.argv
 
     if len(argv) == 1:
-        testMakeTorrents(argv);
+        testSeedmany(argv);
 
     if len(argv) == 1:
         print '%s start tracker/seed/peer' % argv[0]

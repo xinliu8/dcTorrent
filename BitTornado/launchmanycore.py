@@ -22,7 +22,7 @@ from random import seed
 from socket import error as socketerror
 from threading import Event
 from sys import argv, exit
-import sys, os
+import sys, os, logging
 from clock import clock
 from __init__ import createPeerID, mapbase64, version
 from cStringIO import StringIO
@@ -147,6 +147,7 @@ class SingleDownload:
 
 class LaunchMany:
     def __init__(self, config, Output):
+        self.logger = logging.getLogger('{0}.{1}'.format(__name__, self.__class__.__name__))
         try:
             self.config = config
             self.Output = Output
@@ -157,7 +158,8 @@ class LaunchMany:
             self.blocked_files = {}
             self.scan_period = config['parse_dir_interval']
             self.stats_period = config['display_interval']
-
+            self.recursive_torrents_search = config['recursive_torrents_search']
+            self.role = config['role']
             self.torrent_list = []
             self.downloads = {}
             self.counter = 0
@@ -213,7 +215,7 @@ class LaunchMany:
         self.rawserver.add_task(self.scan, self.scan_period)
                                 
         r = parsedir(self.torrent_dir, self.torrent_cache,
-                     self.file_cache, self.blocked_files,
+                     self.file_cache, self.blocked_files, recursive_torrents_search = self.recursive_torrents_search,
                      return_metainfo = True, errfunc = self.Output.message)
 
         ( self.torrent_cache, self.file_cache, self.blocked_files,
@@ -310,8 +312,30 @@ class LaunchMany:
         self.downloads[hash] = d
         d.start()
 
+    def findFile(self, name, dir):
+        # search all files first as listdir returns files in arbitrary order
+        subdirs = []
+        for item in os.listdir(dir):
+            abspath = os.path.join(dir, item)
+            if os.path.isfile(abspath):
+                if name == item:
+                    self.logger.debug('found file to seed: ' + abspath)
+                    return abspath
+            else :
+                subdirs.append(abspath)
+            
+        for subdir in subdirs:
+            result = self.findFile(name, subdir)
+            if result is not None:
+                return result
+
+        return None
 
     def saveAs(self, hash, name, saveas, isdir):
+        # find the file location if we know we are seeding
+        if self.role == 'seedmany':
+            return self.findFile(name, saveas)
+
         x = self.torrent_cache[hash]
         style = self.config['saveas_style']
         if style == 1 or style == 3:

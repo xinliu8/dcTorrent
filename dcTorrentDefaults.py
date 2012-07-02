@@ -49,5 +49,6 @@ adjustDownloader = {
                     'spew': 1,
                     'max_initiate': 40, #40,
                     'max_uploads': 7, #7
-                    'seed_after_finish': 10
+                    'seed_after_finish': 10,
+                    'role': 'seedmany' # or seed, download
                     }

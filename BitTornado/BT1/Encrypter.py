@@ -105,7 +105,7 @@ class Connection:
         return self.connection.is_flushed()
 
     def read_header_len(self, s):
-        self.logger.debug('Handshake receives: {0}'.format(s))
+        self.logger.debug('Handshake receives: {0}'.format(tohex(s)))
         if ord(s) != len(protocol_name):
             return None
         return len(protocol_name), self.read_header
@@ -120,7 +120,7 @@ class Connection:
         return 20, self.read_download_id
 
     def read_download_id(self, s):
-        self.logger.debug('Handshake receives: {0}'.format(s))
+        self.logger.debug('Handshake receives: {0}'.format(tohex(s)))
         if s != self.Encoder.download_id:
             return None
         if not self.locally_initiated:

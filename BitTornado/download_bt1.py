@@ -32,6 +32,7 @@ from random import seed
 from threading import Thread, Event
 from clock import clock
 from __init__ import createPeerID
+import logging
 
 try:
     True
@@ -362,6 +363,7 @@ class BT1Download:
                              config['rarest_first_priority_cutoff'])
         self.choker = Choker(config, rawserver.add_task,
                              self.picker, self.finflag.isSet)
+        self.logger = logging.getLogger('{0}.{1}'.format(__name__, self.__class__.__name__))
 
 
     def checkSaveLocation(self, loc):
@@ -383,6 +385,7 @@ class BT1Download:
 
             if self.info.has_key('length'):
                 file_length = self.info['length']
+                self.logger.debug('Getting saveas file path for {0} under {1}'.format(self.info['name'], self.config['saveas']))
                 file = filefunc(self.info['name'], file_length,
                                 self.config['saveas'], False)
                 if file is None:

@@ -9,6 +9,7 @@ except:
     True = 1
     False = 0
 
+import logging
 from BT1.Encrypter import protocol_name
 
 default_task_id = []
@@ -164,6 +165,7 @@ class MultiHandler:
         self.singlerawservers = {}
         self.connections = {}
         self.taskqueues = {}
+        self.logger = logging.getLogger('{0}.{1}'.format(__name__, self.__class__.__name__))
 
     def newRawServer(self, info_hash, doneflag, protocol=protocol_name):
         new = SingleRawServer(info_hash, self, doneflag, protocol)
@@ -185,4 +187,5 @@ class MultiHandler:
     # be wary of name collisions
 
     def external_connection_made(self, ss):
+        self.logger.debug('External connection made in MultiHandler from {0}:{1}'.format(ss.ip, ss.peer_port))
         NewSocketHandler(self, ss)

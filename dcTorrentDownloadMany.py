@@ -45,6 +45,8 @@ def hours(n):
         return '%d min %02d sec' % (m, s)
 
 class HeadlessDownloadMany:
+    def __init(self):
+        self.logger = logging.getLogger('{0}.{1}'.format(__name__, self.__class__.__name__))
     def display(self, data):
         if not data:
             self.logger.debug('no torrents')
@@ -70,7 +72,8 @@ class HeadlessDownloadMany:
         defaults.extend( [
             ( 'parse_dir_interval', 60,
               "how often to rescan the torrent directory, in seconds" ),
-            ( 'save_in', params[1], "directory to save downloads"),
+            ( 'recursive_torrents_search', True,
+              "search folder for torrents recursively or semi-resursively in launchmany mode" ),
             ( 'saveas_style', 1,
               "How to name torrent downloads (1 = rename to torrent name, " +
               "2 = save under name in torrent, 3 = save in directory under torrent name)" ),
@@ -96,6 +99,8 @@ class HeadlessDownloadMany:
         except ValueError, e:
             self.logger.error(str(e) + '\nrun with no args for parameter explanations')
             exit(1)
+
+        adjustDownloader['role'] = 'seedmany'
 
         for k in adjustDownloader:
             config[k] = adjustDownloader[k]

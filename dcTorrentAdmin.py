@@ -26,7 +26,7 @@ class MyPP(protocol.ProcessProtocol):
         self.data = ""
         self.name = name
         self.logger = logging.getLogger('{0}'.format(self.__class__.__name__))
-
+        
     def connectionMade(self):
         self.transport.closeStdin()
     def outReceived(self, data):
@@ -81,6 +81,7 @@ class ProcessManager():
     def __init__(self):
         self.lock = Lock()
         self.processes = dict()
+        self.logger = logging.getLogger('{0}.{1}'.format(__name__, self.__class__.__name__))
     def has(self, name):
         self.lock.acquire()
         isExists = True if self.processes.has_key(name) else False
@@ -89,41 +90,48 @@ class ProcessManager():
     def add(self, name, process):
         self.lock.acquire()
         self.processes[name] = process
+        self.logger.debug('Add process ' + name)
         self.lock.release()
     def remove(self, name):
         self.lock.acquire()
         if self.processes.has_key(name):
             del self.processes[name]
+            self.logger.debug('Remove process ' + name)
         self.lock.release()
     def kill(self, name):
         self.lock.acquire()
         if self.processes.has_key(name):
             self.processes[name].signalProcess('KILL')
             del self.processes[name]
+            self.logger.debug('Killed and removed process ' + name)
         self.lock.release()
 
 class DcTorrentAdmin(Resource):
     def __init__(self):
         dcTorrentLogging.setRootLogger(os.path.join(defaultDirs['log'], 'admin.log'), logging.DEBUG)
         self.logger = logging.getLogger('admin')
+
     def getDownloadId(self, action, target):
-        return action + '$' + target
+        return action + '$' + os.path.normcase(os.path.abspath(target))
 
     def extractDownloadId(self, downloadId):
         separator = downloadId.find('$')
         return (downloadId[:separator], downloadId[separator+1:])
 
     def getDcTorrentPath(self):
-        global application_path
-        return os.path.join(application_path, "dcTorrent.exe")
+        application_path = ''
+        if getattr(sys, 'frozen', False):
+            application_path = os.path.dirname(sys.executable)
+            return [os.path.join(application_path, "dcTorrent.exe")]
+        elif __file__:
+            application_path = os.path.dirname(__file__)
+            return [os.path.join(defaultDirs['python'], 'python.exe'), os.path.join(application_path, 'dcTorrent.py')]
         
     def track(self, port):
-        
-        params = ['--port', port, '--dfile', 'dstate']
-        pp = MyPP('track')
-        #program = [defaultDirs['python'] + "python.exe", "dcTorrent.py", "start", "track"]
-        program = [self.getDcTorrentPath(), "start", "track"]
+        program = self.getDcTorrentPath()
+        params = ["start", "track", '--port', port, '--dfile', 'dstate']
         args = program + params
+        pp = MyPP('track')
         trackerProcess = reactor.spawnProcess(pp, args[0], args, env = os.environ)
         processes.add('track', trackerProcess)
         
@@ -141,11 +149,10 @@ class DcTorrentAdmin(Resource):
         components = os.path.normpath(parts.path).split(os.sep)
         torrentName = components[len(components)-1]
         filename = torrentName[:torrentName.find('.torrent')]
-        params = [action, '--url', torrent, '--saveas', os.path.join(defaultDirs[action], filename), '--ip', host]
+        params = ["start", action, '--url', torrent, '--saveas', os.path.join(defaultDirs[action], filename), '--ip', host]
         #if action == 'seed':
         #    params += ['--super_seeder', '1']
-        #program = [defaultDirs['python'] + "python.exe", "dcTorrent.py", "start"]
-        program = [self.getDcTorrentPath(), "start"]
+        program = self.getDcTorrentPath()
         args = program + params
         pp = MyPP(downloadId)
         downloadProcess = reactor.spawnProcess(pp, args[0], args, env = os.environ)
@@ -157,8 +164,8 @@ class DcTorrentAdmin(Resource):
     def download_many(self, downloadId, host):
         # now only used for seed many
         (action, dir) = self.extractDownloadId(downloadId)
-        params = [action, dir, '--saveas', dir, '--ip', host]
-        program = [self.getDcTorrentPath(), "start"]
+        params = ["start", action, dir, '--saveas', dir, '--ip', host]
+        program = self.getDcTorrentPath()
         args = program + params
         pp = MyPP(downloadId)
         downloadProcess = reactor.spawnProcess(pp, args[0], args, env = os.environ)
@@ -175,10 +182,13 @@ class DcTorrentAdmin(Resource):
         for file in args[1:]:
             make_meta_file(file, args[0], config)
     def make_torrents(self, trackers, dir):
-        for f in os.listdir(dir):
-            if not f.endswith('.torrent'):
-                self.make_torrent(f, dir, trackers)
-
+        # recursively
+        for item in os.listdir(dir):
+            if os.path.isfile(os.path.join(dir, item)):
+                if not item.endswith('.torrent'):
+                    self.make_torrent(item, dir, trackers)
+            else:
+                self.make_torrents(trackers, os.path.join(dir, item))
     def render_GET(self, request):
         global downloaders, processes, root, VIEWS
         
@@ -245,7 +255,7 @@ class DcTorrentAdmin(Resource):
                     return 'wrong parameters {0}'.format(param)
                 
                 dir = request.args[param][0]
-                downloadId = self.getDownloadId(role, os.path.abspath(defaultDirs[dir]))
+                downloadId = self.getDownloadId(role, dir)
                 processes.kill(downloadId)
                 return '{0} is stopped.'.format(downloadId)
         elif action=='clean':
@@ -275,7 +285,7 @@ class Dispatcher(Resource):
         if action == '':
             return self
         else:
-            if name in VIEWS.keys():
+            if action in VIEWS.keys():
                 return Resource.getChild(self, action, request)
             else:
                 return NotFound()
@@ -283,22 +293,17 @@ class Dispatcher(Resource):
 
 #tracker = TrackerServer(trackerAnnouceCallback)
 
-application_path = ''
-if getattr(sys, 'frozen', False):
-    application_path = os.path.dirname(sys.executable)
-elif __file__:
-    application_path = os.path.dirname(__file__)
+
 
 downloaders = dict()
 processes = ProcessManager()
 
+if not os.path.exists(defaultDirs['log']):
+    os.makedirs(defaultDirs['log'])
+
 VIEWS = {
          'admin': DcTorrentAdmin()
 }
-
-
-if not os.path.exists(defaultDirs['log']):
-        os.makedirs(defaultDirs['log'])
 
 root = Dispatcher()
 for viewName, className in VIEWS.items():
