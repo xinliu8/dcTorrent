@@ -159,6 +159,7 @@ defaults = [
     ('dedicated_seed_id', '',
         "code to send to tracker identifying as a dedicated seed"),
     ('logfile', '', 'file to write the tracker logs, use - for stdout (default)'),
+    ('announce_list', '', 'a list of tracker announce')
     ]
 
 argslistheader = 'Arguments are:\n\n'
@@ -667,10 +668,15 @@ class BT1Download:
             self.rerequest.hit()
 
     def startRerequester(self, seededfunc = None, force_rapid_update = False):
-        if self.response.has_key('announce-list'):
-            trackerlist = self.response['announce-list']
+        # overwrite announce-list in torrent file by input parameters
+        if self.config.has_key('announce-list'):
+            trackers = self.config['announce-list']
+            trackerlist = tracker.split(',')
         else:
-            trackerlist = [[self.response['announce']]]
+            if self.response.has_key('announce-list'):
+                trackerlist = self.response['announce-list']
+            else:
+                trackerlist = [[self.response['announce']]]
 
         self.rerequest = Rerequester(trackerlist, self.config['rerequest_interval'], 
             self.rawserver.add_task, self.connecter.how_many_connections, 

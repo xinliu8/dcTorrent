@@ -25,6 +25,10 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Content Include="external\Microsoft.VC90.CRT.manifest" />
+    <Content Include="external\msvcm90.dll" />
+    <Content Include="external\msvcp90.dll" />
+    <Content Include="external\msvcr90.dll" />
     <Content Include="LICENSE.txt" />
     <Content Include="logging.conf" />
   </ItemGroup>
@@ -88,10 +92,13 @@
     <Compile Include="dcTorrentLogging.py" />
     <Compile Include="dcTorrentTrackerService.py" />
     <Compile Include="setupDcTorrentAgent.py" />
+    <Compile Include="tests\testStorageWrapper.py" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include=".git\" />
     <Folder Include="BitTornado\" />
     <Folder Include="BitTornado\BT1\" />
+    <Folder Include="external" />
+    <Folder Include="tests" />
   </ItemGroup>
 </Project>

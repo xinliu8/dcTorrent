@@ -112,7 +112,10 @@ class DcTorrentAdmin(Resource):
         self.logger = logging.getLogger('admin')
 
     def getDownloadId(self, action, target):
-        return action + '$' + os.path.normcase(os.path.abspath(target))
+        if target.find('http') == -1 :
+            return action + '$' + os.path.normcase(os.path.abspath(target))
+        else:
+            return action + '$' + target
 
     def extractDownloadId(self, downloadId):
         separator = downloadId.find('$')
@@ -139,7 +142,7 @@ class DcTorrentAdmin(Resource):
         # clear the "done" event for the next start
         #d.addCallback(lambda x: tracker.init())
 
-    def download(self, downloadId, host):
+    def download(self, downloadId, host, trackers=[]):
         
         # disallow multiple downloaders on one machine
         #if processes.has(downloadId):
@@ -149,7 +152,10 @@ class DcTorrentAdmin(Resource):
         components = os.path.normpath(parts.path).split(os.sep)
         torrentName = components[len(components)-1]
         filename = torrentName[:torrentName.find('.torrent')]
-        params = ["start", action, '--url', torrent, '--saveas', os.path.join(defaultDirs[action], filename), '--ip', host]
+        trackerUris = ['http://{0}:{1}/announce'.format(tracker, defaultSettings['trackerPort']) for tracker in trackers]
+        params = ['start', action, '--url', torrent, '--saveas', os.path.join(defaultDirs[action], filename), '--ip', host]
+        if len(trackers) > 0:
+            params += [ '--announce_list', ','.join(trackerUris)]
         #if action == 'seed':
         #    params += ['--super_seeder', '1']
         program = self.getDcTorrentPath()
@@ -161,10 +167,13 @@ class DcTorrentAdmin(Resource):
         #downloaders[torrent] = h
         #d = threads.deferToThread(h.download, params)
         #d.addCallback(h.downloadCallback)
-    def download_many(self, downloadId, host):
+    def download_many(self, downloadId, host, trackers=[]):
         # now only used for seed many
         (action, dir) = self.extractDownloadId(downloadId)
+        trackerUris = ['http://{0}:{1}/announce'.format(tracker, defaultSettings['trackerPort']) for tracker in trackers]
         params = ["start", action, dir, '--saveas', dir, '--ip', host]
+        if len(trackers) > 0:
+            params += [ '--announce_list', ','.join(trackerUris)]
         program = self.getDcTorrentPath()
         args = program + params
         pp = MyPP(downloadId)
@@ -213,7 +222,10 @@ class DcTorrentAdmin(Resource):
             VIEWS['files'] = File(abs_dir)
             root.putChild('files', File(abs_dir))
             downloadId = self.getDownloadId(action, abs_dir)
-            self.download_many(downloadId, request.host.host)
+
+            if request.args.has_key('trackers'):
+                trackers = request.args['trackers'][0]
+            self.download_many(downloadId, request.host.host, trackers)
             return '{0} is up.'.format(downloadId)
         elif action=='maketorrent':
             source = request.args['source'][0]

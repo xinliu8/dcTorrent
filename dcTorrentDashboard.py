@@ -22,8 +22,8 @@ def stopSeed(ip, torrent):
     site = ip + ':' + adminPort
     httpGet(site, request)
 
-def startSeedMany(ip, dir):
-    request = '/admin?action=seedmany&dir={0}'.format(dir)
+def startSeedMany(ip, dir, trackers=[]):
+    request = '/admin?action=seedmany&dir={0}&trackers={1}'.format(dir, ','.join(trackers))
     site = ip + ':' + adminPort
     httpGet(site, request)
 
@@ -32,8 +32,8 @@ def stopSeedMany(ip, dir):
     site = ip + ':' + adminPort
     httpGet(site, request)
 
-def startDownload(ip, torrent):
-    request = '/admin?action=download&torrent={0}'.format(torrent)
+def startDownload(ip, torrent, trackers=[]):
+    request = '/admin?action=download&torrent={0}&trackers={1}'.format(torrent, ','.join(trackers))
     site = ip + ':' + adminPort
     httpGet(site, request)
 
@@ -64,15 +64,16 @@ def stopTrack(ip):
 
 def makeTorrent(source, trackers):
     request = '/admin?action=maketorrent&source={0}&trackers={1}'.format(source, ','.join(trackers))
-    for tracker in trackers:
-        site = tracker + ':' + adminPort
-        httpGet(site, request)
+    site = trackers[0] + ':' + adminPort
+    httpGet(site, request)
 
 def makeTorrents(trackers, dir):
-    request = '/admin?action=maketorrents&trackers={0}&torrentdir={1}'.format(','.join(trackers), dir)
-    for tracker in trackers:
-        site = tracker + ':' + adminPort
-        httpGet(site, request)
+    # test overwrite trackers from download parameters
+    dummy_trackers = ['128.0.0.1']
+    request = '/admin?action=maketorrents&trackers={0}&torrentdir={1}'.format(','.join(dummy_trackers), dir)
+    # only one of trackers will make the torrents
+    site = trackers[0] + ':' + adminPort
+    httpGet(site, request)
 
 def cleanHistory(ip, role):
     request = '/admin?action=clean&role={0}'.format(role)
@@ -144,10 +145,12 @@ def startController(seed_abs_dir):
         return;
 
     # only one generate torrents
-    makeTorrents(trackers[:1], seed_abs_dir)
+    # test overwrite trackers from download parameters
+    
+    makeTorrents(trackers, seed_abs_dir)
 
     for seeder in seeders:
-        startSeedMany(seeder, seed_abs_dir)
+        startSeedMany(seeder, seed_abs_dir, trackers)
 
 def startAllSingleFile():
     global trackers, seeders, downloaders, filename
@@ -181,7 +184,7 @@ def startDownloads(filename):
     tracker = trackers[0] #choice(trackers)
     torrentUri = "http://{0}:{1}/files/{2}.torrent".format(tracker, adminPort, filename)
     for downloader in downloaders:
-        startDownload(downloader, torrentUri)
+        startDownload(downloader, torrentUri, trackers)
 
 def stopAllSingleFile():
     global tracker, seeders, downloaders, filename
