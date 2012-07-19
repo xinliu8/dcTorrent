@@ -211,7 +211,10 @@ class DcTorrentAdmin(Resource):
         elif action=='seed' or action=='download':
             torrent = request.args['torrent'][0]
             downloadId = self.getDownloadId(action, torrent)
-            self.download(downloadId, request.host.host)
+            trackers = []
+            if request.args.has_key('trackers'):
+                trackers += request.args['trackers'][0].split(',')
+            self.download(downloadId, request.host.host, trackers)
             return '{0} is up.'.format(downloadId)
         elif action=='seedmany' or action=='downloadmany':
             param = 'dir'
@@ -223,8 +226,9 @@ class DcTorrentAdmin(Resource):
             root.putChild('files', File(abs_dir))
             downloadId = self.getDownloadId(action, abs_dir)
 
+            trackers = []
             if request.args.has_key('trackers'):
-                trackers = request.args['trackers'][0]
+                trackers += request.args['trackers'][0].split(',')
             self.download_many(downloadId, request.host.host, trackers)
             return '{0} is up.'.format(downloadId)
         elif action=='maketorrent':

@@ -669,9 +669,9 @@ class BT1Download:
 
     def startRerequester(self, seededfunc = None, force_rapid_update = False):
         # overwrite announce-list in torrent file by input parameters
-        if self.config.has_key('announce-list'):
-            trackers = self.config['announce-list']
-            trackerlist = tracker.split(',')
+        if self.config.has_key('announce_list'):
+            trackers = self.config['announce_list']
+            trackerlist = [trackers.split(',')]
         else:
             if self.response.has_key('announce-list'):
                 trackerlist = self.response['announce-list']
